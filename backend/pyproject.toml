@@ -1,0 +1,81 @@
+[project]
+name = "youngstorage-backend"
+version = "0.1.0"
+description = "Youngstorage labs platform backend (foundation phase)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.32",
+    "gunicorn>=23.0",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.5",
+    "email-validator>=2.2",
+    "beanie>=1.27,<2",
+    "motor>=3.6",
+    "redis>=5.2",
+    "celery>=5.4",
+    "flower>=2.0",
+    "aiomqtt>=2.3",
+    "bcrypt>=4.2",
+    "pyjwt>=2.10",
+    "fastapi-mail>=1.4.2",
+    "slowapi>=0.1.9",
+    "structlog>=24.4",
+    "prometheus-fastapi-instrumentator>=7.0",
+    "httpx>=0.27",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.7",
+    "black>=24.10",
+    "mypy>=1.13",
+    "pytest>=8.3",
+    "pytest-asyncio>=0.24",
+    "pytest-cov>=6.0",
+    "fakeredis>=2.26",
+    "testcontainers[mongodb]>=4.8",
+    "asgi-lifespan>=2.1",
+    "pre-commit>=4.0",
+    "pip-audit>=2.7",
+    "bandit>=1.8",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["app"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["app", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "C4", "SIM", "ASYNC", "S"]
+# UP046/UP047: PEP-695 generics conflict with pydantic Generic models.
+ignore = ["S101", "UP046", "UP047"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S105", "S106"]  # hardcoded test passwords are fine
+"app/core/config.py" = ["S105"]  # default settings values, not real secrets
+"app/schemas/auth.py" = ["S105"]  # token_type="bearer" is a label, not a secret
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+
+[tool.mypy]
+python_version = "3.12"
+plugins = ["pydantic.mypy"]
+warn_unused_ignores = true
+warn_redundant_casts = true
+disallow_untyped_defs = true
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+addopts = "-q --cov=app --cov-report=term-missing"
