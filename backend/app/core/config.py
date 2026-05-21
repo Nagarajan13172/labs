@@ -95,8 +95,27 @@ class Settings(BaseSettings):
     dns_verification_enabled: bool = False
     server_public_ip: str = ""
 
+    # Database-as-a-service (Phase 5)
+    dbaas_max_databases: int = 5
+    dbaas_engines_enabled: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["mysql", "mariadb", "mongodb"]
+    )
+    # Host/port returned to users in connection info (how *they* reach the engine).
+    dbaas_public_host: str = "localhost"
+    # Shared admin user for the MySQL-family engines (created via init SQL).
+    dbaas_sql_admin_user: str = "ysadmin"
+    dbaas_sql_admin_password: str = "ys_admin_pw"
+    mysql_root_password: str = "ys_mysql_root"
+    mariadb_root_password: str = "ys_mariadb_root"
+    mongo_dbaas_root_user: str = "root"
+    mongo_dbaas_root_password: str = "ys_mongo_root"
+
     @field_validator(
-        "cors_origins", "allowed_email_domains", "wg_client_allowed_ips", mode="before"
+        "cors_origins",
+        "allowed_email_domains",
+        "wg_client_allowed_ips",
+        "dbaas_engines_enabled",
+        mode="before",
     )
     @classmethod
     def _split_csv(cls, value: object) -> object:

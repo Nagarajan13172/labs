@@ -117,6 +117,57 @@ services:
     depends_on:
       redis: { condition: service_healthy }
 
+  # ---- DBaaS engines (Phase 5) ----
+  mysql:
+    image: mysql:8.0
+    command: ["--default-authentication-plugin=mysql_native_password"]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-ys_mysql_root}
+      DBAAS_SQL_ADMIN_USER: ${DBAAS_SQL_ADMIN_USER:-ysadmin}
+      DBAAS_SQL_ADMIN_PASSWORD: ${DBAAS_SQL_ADMIN_PASSWORD:-ys_admin_pw}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/db/admin-init.sql:/docker-entrypoint-initdb.d/admin-init.sql:ro
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${MYSQL_ROOT_PASSWORD:-ys_mysql_root}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mariadb:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD:-ys_mariadb_root}
+      DBAAS_SQL_ADMIN_USER: ${DBAAS_SQL_ADMIN_USER:-ysadmin}
+      DBAAS_SQL_ADMIN_PASSWORD: ${DBAAS_SQL_ADMIN_PASSWORD:-ys_admin_pw}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./docker/db/admin-init.sql:/docker-entrypoint-initdb.d/admin-init.sql:ro
+    ports:
+      - "3307:3306"
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  mongodb-dbaas:
+    image: mongo:7
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_DBAAS_ROOT_USER:-root}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_DBAAS_ROOT_PASSWORD:-ys_mongo_root}
+    volumes:
+      - mongodb_dbaas_data:/data/db
+    ports:
+      - "27018:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "-u", "${MONGO_DBAAS_ROOT_USER:-root}", "-p", "${MONGO_DBAAS_ROOT_PASSWORD:-ys_mongo_root}", "--eval", "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
   wg-gateway:
     build:
       context: .
@@ -145,6 +196,9 @@ volumes:
   mongo_data:
   wg_config:
   traefik_dynamic:
+  mysql_data:
+  mariadb_data:
+  mongodb_dbaas_data:
 
 networks:
   default:

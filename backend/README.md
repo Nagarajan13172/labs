@@ -125,10 +125,30 @@ container recreation or Traefik restart.
 > Dev routes over HTTP (`web` entrypoint). Production would add a `websecure`
 > entrypoint + Let's Encrypt certresolver for automatic TLS.
 
+## Database-as-a-service (Phase 5)
+
+Shared engine servers (**MySQL / MariaDB / MongoDB**) run as containers. Each
+"database" the user creates provisions an **isolated database plus a dedicated,
+scoped user** (generated password) on the chosen engine — managed via native
+admin connections (`pymysql` / `pymongo`), not the original's `docker exec` +
+shell-script parsing. Identifiers are strictly validated; secrets are bound
+parameters. The API returns a ready-to-use connection URI.
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/v1/services/engines` | Available engines + host/port |
+| `GET /api/v1/services/databases` | The user's databases + connection info |
+| `POST /api/v1/services/databases` | Create `{engine, name}` → DB + scoped user |
+| `DELETE /api/v1/services/databases/{id}` | Drop the database + its user |
+
+> Dev exposes engine ports (MySQL 3306, MariaDB 3307, MongoDB 27018) on the host
+> and returns `localhost` connection info. Lab→engine connectivity (engines on the
+> labs network) is a follow-up.
+
 ## Roadmap
 
 - **Phase 2 — DONE** ✅ Lab container provisioning (Celery + Docker SDK), atomic IP allocator.
 - **Phase 3 — DONE** ✅ WireGuard peers via the scoped `wg-gateway` helper (no root password in app).
 - **Phase 4 — DONE** ✅ Traefik dynamic domains + DNS verification (labs routed by hostname).
-- **Phase 5** — DB-as-a-service (MySQL/MariaDB/MongoDB).
-- **Follow-up** — Production TLS (Let's Encrypt); wire the lab container into the VPN as a peer; route VPN clients to lab IPs.
+- **Phase 5 — DONE** ✅ DB-as-a-service (MySQL/MariaDB/MongoDB) via native admin connections.
+- **Follow-ups** — Production TLS (Let's Encrypt); encrypt stored secrets at rest; wire labs into the VPN + reach lab/engine IPs across networks.

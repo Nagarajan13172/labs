@@ -8,6 +8,7 @@ from motor.motor_asyncio import AsyncIOMotorClient
 from app.core.config import settings
 from app.core.logging import get_logger
 from app.models.counter import Counter
+from app.models.database import ManagedDatabase
 from app.models.lab import Lab
 from app.models.peer import Peer
 from app.models.user import User
@@ -17,7 +18,7 @@ log = get_logger("mongo")
 _client: AsyncIOMotorClient | None = None
 
 # All Beanie documents must be registered here.
-DOCUMENT_MODELS = [User, Lab, Counter, Peer]
+DOCUMENT_MODELS = [User, Lab, Counter, Peer, ManagedDatabase]
 
 
 async def init_mongo() -> None:
