@@ -6,6 +6,11 @@ services:
     env_file: .env
     environment:
       ENVIRONMENT: development
+    # root + docker socket so the API can stop/start/inspect lab containers.
+    # Dev convenience; production should use a socket proxy or rootless Docker.
+    user: root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     ports:
       - "8000:8000"
     depends_on:
@@ -27,6 +32,10 @@ services:
     build: .
     env_file: .env
     command: celery -A app.workers.celery_app.celery_app worker --loglevel=info
+    # root + docker socket so the worker can build/run lab containers.
+    user: root
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
       redis: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }

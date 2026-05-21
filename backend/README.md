@@ -69,9 +69,27 @@ See `app/` — layered as `api → services → repositories → models`, with `
 (config/security/logging/exceptions), `db` (mongo/redis), `messaging` (mqtt),
 and `workers` (celery).
 
+## Labs (Phase 2 — container provisioning)
+
+Each user gets one lab: a container (default `codercom/code-server`, browser VS
+Code) on the `youngstorage_labs` bridge network with an atomically-allocated
+static IP, a persistent home volume, and resource limits. Builds/starts run in a
+Celery task that streams progress to MQTT topic `/topic/<username>`.
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/v1/labs/deploy` | Create or redeploy the lab (async; returns 202) |
+| `GET /api/v1/labs` | Lab + live container status |
+| `GET /api/v1/labs/credentials` | code-server password + published host port |
+| `POST /api/v1/labs/stop` · `/start` | Stop / start the container |
+| `DELETE /api/v1/labs` | Destroy container + volume, release the IP |
+
+> The api and worker mount `/var/run/docker.sock` and run as root in dev so they
+> can drive Docker. Production should use a Docker socket proxy or rootless setup.
+
 ## Roadmap
 
-- **Phase 2** — Lab container provisioning (Celery + Docker SDK), atomic IP allocator.
+- **Phase 2 — DONE** ✅ Lab container provisioning (Celery + Docker SDK), atomic IP allocator.
 - **Phase 3** — WireGuard peers via a scoped privileged helper (no root password in app).
-- **Phase 4** — Traefik dynamic domains + DNS verification.
+- **Phase 4** — Traefik dynamic domains + DNS verification (route labs by hostname instead of host port).
 - **Phase 5** — DB-as-a-service (MySQL/MariaDB/MongoDB).

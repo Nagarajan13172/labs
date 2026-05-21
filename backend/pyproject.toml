@@ -16,6 +16,7 @@ dependencies = [
     "celery>=5.4",
     "flower>=2.0",
     "aiomqtt>=2.3",
+    "docker>=7.1",
     "bcrypt>=4.2",
     "pyjwt>=2.10",
     "fastapi-mail>=1.4.2",
@@ -74,6 +75,12 @@ warn_unused_ignores = true
 warn_redundant_casts = true
 disallow_untyped_defs = true
 ignore_missing_imports = true
+
+# docker-py is only partially typed; treat it as untyped to avoid false positives.
+[[tool.mypy.overrides]]
+module = "docker.*"
+follow_imports = "skip"
+follow_imports_for_stubs = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"

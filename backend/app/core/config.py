@@ -62,6 +62,15 @@ class Settings(BaseSettings):
     # Auth policy
     allowed_email_domains: Annotated[list[str], NoDecode] = Field(default_factory=list)
 
+    # Labs (Phase 2: container provisioning)
+    lab_base_image: str = "codercom/code-server:latest"
+    lab_network_name: str = "youngstorage_labs"
+    lab_network_subnet: str = "172.30.0.0/24"
+    lab_internal_port: int = 8080  # code-server listens here
+    lab_mem_limit: str = "2g"
+    lab_cpus: float = 1.0
+    lab_home_path: str = "/home/coder"
+
     @field_validator("cors_origins", "allowed_email_domains", mode="before")
     @classmethod
     def _split_csv(cls, value: object) -> object:

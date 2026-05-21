@@ -20,7 +20,6 @@ import app.db.redis as redis_mod
 import fakeredis.aioredis
 import pytest
 import pytest_asyncio
-from app.models.user import User
 from beanie import init_beanie
 from httpx import ASGITransport, AsyncClient
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -51,7 +50,7 @@ async def client(
     motor_client: AsyncIOMotorClient = AsyncIOMotorClient(mongo_url, uuidRepresentation="standard")
     db_name = f"test_{uuid.uuid4().hex}"
     mongo_mod._client = motor_client
-    await init_beanie(database=motor_client[db_name], document_models=[User])
+    await init_beanie(database=motor_client[db_name], document_models=mongo_mod.DOCUMENT_MODELS)
 
     # --- stub outbound email, capturing the tokens ---
     async def _capture_verify(recipient: str, token: str) -> None:

@@ -8,6 +8,7 @@ and standard ``sub``/``exp``/``iat`` claims.
 from __future__ import annotations
 
 import hashlib
+import secrets
 import uuid
 from datetime import UTC, datetime, timedelta
 from enum import StrEnum
@@ -95,3 +96,8 @@ def decode_token(token: str, expected_type: TokenType | None = None) -> dict[str
 
 def new_jti() -> str:
     return str(uuid.uuid4())
+
+
+def generate_password(length: int = 16) -> str:
+    """Generate a URL-safe random password (for code-server, etc.)."""
+    return secrets.token_urlsafe(length)
