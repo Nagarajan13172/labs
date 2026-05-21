@@ -86,6 +86,15 @@ class Settings(BaseSettings):
     gateway_url: str = "http://wg-gateway:8001"
     gateway_token: str = "change-me-gateway-token"
 
+    # Traefik / domains (Phase 4)
+    lab_domain_base: str = "lab.localhost"  # auto host = <username>.<base>
+    traefik_dynamic_dir: str = "/dynamic"
+    traefik_entrypoint: str = "web"
+    max_domains: int = 5
+    # When enabled, a custom domain must resolve (A record) to server_public_ip.
+    dns_verification_enabled: bool = False
+    server_public_ip: str = ""
+
     @field_validator(
         "cors_origins", "allowed_email_domains", "wg_client_allowed_ips", mode="before"
     )

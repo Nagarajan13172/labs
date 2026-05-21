@@ -38,6 +38,9 @@ class Lab(Document):
     # Access
     code_server_password: str
 
+    # Verified custom domains routed to this lab (Phase 4)
+    domains: list[str] = Field(default_factory=list)
+
     status_message: str | None = None
     created_at: datetime = Field(default_factory=_utcnow)
     updated_at: datetime = Field(default_factory=_utcnow)

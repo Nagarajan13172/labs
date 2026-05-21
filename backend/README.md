@@ -104,10 +104,31 @@ injection (every `wg`/`iptables` call is an argument list with validated input).
 | `GET /api/v1/network/peers/{id}/qr` | Client config as a QR PNG |
 | `DELETE /api/v1/network/peers/{id}` | Remove peer + release its VPN IP |
 
+## Domains & routing (Phase 4 — Traefik dynamic config)
+
+Traefik routes each lab by **hostname**. The backend writes a per-lab dynamic
+config file (Traefik **file provider**, hot-reloaded) describing a router (Host
+rules) → service (the lab container's IP:port). Traefik joins the labs network so
+it can reach lab IPs. This means domains can be added/removed at runtime with no
+container recreation or Traefik restart.
+
+- **Auto subdomain:** every running lab is reachable at `<username>.lab.localhost`.
+- **Custom domains:** users add their own domain; when `DNS_VERIFICATION_ENABLED`,
+  it must resolve (A record) to `SERVER_PUBLIC_IP` before it's accepted.
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/v1/network/domains` | Auto host + the user's custom domains |
+| `POST /api/v1/network/domains` | Add a (DNS-verified) custom domain |
+| `DELETE /api/v1/network/domains/{domain}` | Remove a custom domain |
+
+> Dev routes over HTTP (`web` entrypoint). Production would add a `websecure`
+> entrypoint + Let's Encrypt certresolver for automatic TLS.
+
 ## Roadmap
 
 - **Phase 2 — DONE** ✅ Lab container provisioning (Celery + Docker SDK), atomic IP allocator.
 - **Phase 3 — DONE** ✅ WireGuard peers via the scoped `wg-gateway` helper (no root password in app).
-- **Phase 4** — Traefik dynamic domains + DNS verification (route labs by hostname instead of host port).
+- **Phase 4 — DONE** ✅ Traefik dynamic domains + DNS verification (labs routed by hostname).
 - **Phase 5** — DB-as-a-service (MySQL/MariaDB/MongoDB).
-- **Follow-up** — Wire the lab container into the VPN as a peer; route VPN clients to lab IPs (gateway on the labs network).
+- **Follow-up** — Production TLS (Let's Encrypt); wire the lab container into the VPN as a peer; route VPN clients to lab IPs.

@@ -7,8 +7,8 @@ from fastapi import APIRouter, Response, status
 from app.dependencies import CurrentUser
 from app.models.peer import DeviceType
 from app.schemas.common import ResponseEnvelope, ok
-from app.schemas.network import PeerCreate, PeerOut, PeerStatus
-from app.services import peer_service
+from app.schemas.network import DomainCreate, DomainList, PeerCreate, PeerOut, PeerStatus
+from app.services import domain_service, peer_service
 
 router = APIRouter(prefix="/network", tags=["Network"])
 
@@ -47,3 +47,24 @@ async def get_peer_qr(peer_id: str, user: CurrentUser) -> Response:
 async def delete_peer(peer_id: str, user: CurrentUser) -> ResponseEnvelope[None]:
     await peer_service.delete_peer(user, peer_id)
     return ok("Peer deleted")
+
+
+# --- Custom domains (Phase 4) ---
+@router.get("/domains", response_model=ResponseEnvelope[DomainList])
+async def list_domains(user: CurrentUser) -> ResponseEnvelope[DomainList]:
+    data = await domain_service.list_domains(user)
+    return ok("Domains", data=DomainList(**data))
+
+
+@router.post(
+    "/domains", response_model=ResponseEnvelope[DomainList], status_code=status.HTTP_201_CREATED
+)
+async def add_domain(data: DomainCreate, user: CurrentUser) -> ResponseEnvelope[DomainList]:
+    result = await domain_service.add_domain(user, data.domain_name)
+    return ok("Domain added", data=DomainList(**result))
+
+
+@router.delete("/domains/{domain_name}", response_model=ResponseEnvelope[None])
+async def remove_domain(domain_name: str, user: CurrentUser) -> ResponseEnvelope[None]:
+    await domain_service.remove_domain(user, domain_name)
+    return ok("Domain removed")

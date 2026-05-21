@@ -2,11 +2,16 @@
 
 from __future__ import annotations
 
+import re
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 from app.models.peer import DeviceType, Peer
+
+_DOMAIN_RE = re.compile(
+    r"^(?=.{1,253}$)([a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$"
+)
 
 
 class PeerCreate(BaseModel):
@@ -44,3 +49,20 @@ class PeerStatus(BaseModel):
     rx_bytes: int = 0
     tx_bytes: int = 0
     created_at: datetime
+
+
+class DomainCreate(BaseModel):
+    domain_name: str
+
+    @field_validator("domain_name")
+    @classmethod
+    def _valid_domain(cls, value: str) -> str:
+        value = value.lower().strip()
+        if not _DOMAIN_RE.match(value):
+            raise ValueError("Invalid domain name")
+        return value
+
+
+class DomainList(BaseModel):
+    auto_host: str
+    domains: list[str]

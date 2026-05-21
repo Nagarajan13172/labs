@@ -37,6 +37,9 @@ def mock_docker(monkeypatch: pytest.MonkeyPatch) -> dict[str, list]:
         docker_service, "remove_container", lambda username, **kw: calls["removed"].append(username)
     )
     monkeypatch.setattr(docker_service, "get_status", lambda cid: "running")
+    # Isolate from Traefik file I/O (covered by its own tests).
+    monkeypatch.setattr("app.services.traefik_service.write_lab_route", lambda *a, **k: None)
+    monkeypatch.setattr("app.services.traefik_service.remove_lab_route", lambda *a, **k: None)
     return calls
 
 

@@ -15,7 +15,7 @@ from app.core.security import generate_password
 from app.models.lab import Lab, LabStatus
 from app.models.user import User
 from app.repositories import lab_repo
-from app.services import docker_service, ipam_service
+from app.services import docker_service, ipam_service, traefik_service
 
 log = get_logger("lab")
 
@@ -71,6 +71,7 @@ async def stop(user: User) -> Lab:
     lab = await _require_lab(user)
     if lab.container_id:
         await asyncio.to_thread(docker_service.stop_container, lab.container_id)
+    await asyncio.to_thread(traefik_service.remove_lab_route, str(lab.user_id))
     lab.status = LabStatus.STOPPED
     lab.status_message = "Stopped by user"
     return await lab_repo.save(lab)
@@ -84,12 +85,20 @@ async def start(user: User) -> Lab:
     lab.host_port = host_port
     lab.status = LabStatus.RUNNING
     lab.status_message = "Started by user"
+    await asyncio.to_thread(
+        traefik_service.write_lab_route,
+        str(lab.user_id),
+        lab.username,
+        lab.internal_ip,
+        lab.domains,
+    )
     return await lab_repo.save(lab)
 
 
 async def destroy(user: User) -> None:
     lab = await _require_lab(user)
     await asyncio.to_thread(docker_service.remove_container, lab.username)
+    await asyncio.to_thread(traefik_service.remove_lab_route, str(lab.user_id))
     await ipam_service.release_lab_ip(lab.internal_ip)
     await lab_repo.delete(lab)
     log.info("lab.destroyed", user_id=str(user.id))

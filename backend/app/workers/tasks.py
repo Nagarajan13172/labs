@@ -15,7 +15,7 @@ from app.core.logging import get_logger
 from app.messaging.mqtt import publish_sync
 from app.messaging.schemas import MqttMsg
 from app.models.lab import LabStatus
-from app.services import docker_service
+from app.services import docker_service, traefik_service
 from app.workers import sync_db
 from app.workers.celery_app import celery_app
 
@@ -85,6 +85,15 @@ def provision_lab(self, lab_id: str) -> dict:  # type: ignore[no-untyped-def]
             status_message="Lab is running",
             container_id=runtime["container_id"],
             host_port=runtime["host_port"],
+        )
+
+        # Publish the Traefik route so the lab is reachable by hostname.
+        progress("Publishing hostname route...")
+        traefik_service.write_lab_route(
+            user_id=lab["user_id"],
+            username=username,
+            internal_ip=lab["internal_ip"],
+            domains=lab.get("domains", []),
         )
         log.info("provision.success", lab_id=lab_id, container_id=runtime["container_id"])
         publish_sync(topic, MqttMsg(message="Lab is ready!", status=True, is_finished=True))

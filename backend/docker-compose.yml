@@ -11,6 +11,7 @@ services:
     user: root
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - traefik_dynamic:/dynamic
     ports:
       - "8000:8000"
     depends_on:
@@ -37,6 +38,7 @@ services:
     user: root
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
+      - traefik_dynamic:/dynamic
     depends_on:
       redis: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
@@ -86,12 +88,20 @@ services:
       - "--api.insecure=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
+      # File provider for dynamic per-lab routes written by the backend.
+      - "--providers.file.directory=/dynamic"
+      - "--providers.file.watch=true"
       - "--entrypoints.web.address=:80"
     ports:
       - "80:80"
       - "8080:8080"     # Traefik dashboard
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_dynamic:/dynamic
+    networks:
+      default:
+      labs:
+        ipv4_address: 172.30.0.254   # fixed, outside the lab allocator range
 
   mailhog:
     image: mailhog/mailhog:v1.0.1
@@ -134,3 +144,15 @@ services:
 volumes:
   mongo_data:
   wg_config:
+  traefik_dynamic:
+
+networks:
+  default:
+  # Declared so Traefik can attach and reach lab containers by their static IP.
+  # docker_service.ensure_network() finds this existing network at provision time.
+  labs:
+    name: youngstorage_labs
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+          gateway: 172.30.0.1

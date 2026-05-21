@@ -19,6 +19,7 @@ dependencies = [
     "docker>=7.1",
     "cryptography>=43.0",
     "qrcode[pil]>=8.0",
+    "pyyaml>=6.0",
     "bcrypt>=4.2",
     "pyjwt>=2.10",
     "fastapi-mail>=1.6.2",  # 1.5.x breaks (SecretStr) with pydantic 2.13+
