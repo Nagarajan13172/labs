@@ -17,9 +17,11 @@ dependencies = [
     "flower>=2.0",
     "aiomqtt>=2.3",
     "docker>=7.1",
+    "cryptography>=43.0",
+    "qrcode[pil]>=8.0",
     "bcrypt>=4.2",
     "pyjwt>=2.10",
-    "fastapi-mail>=1.4.2",
+    "fastapi-mail>=1.6.2",  # 1.5.x breaks (SecretStr) with pydantic 2.13+
     "slowapi>=0.1.9",
     "structlog>=24.4",
     "prometheus-fastapi-instrumentator>=7.0",
@@ -63,6 +65,9 @@ ignore = ["S101", "UP046", "UP047"]
 "tests/**" = ["S105", "S106"]  # hardcoded test passwords are fine
 "app/core/config.py" = ["S105"]  # default settings values, not real secrets
 "app/schemas/auth.py" = ["S105"]  # token_type="bearer" is a label, not a secret
+# The gateway is the controlled privileged helper; it intentionally runs wg/ip/
+# iptables by name with validated, argument-list-only inputs (no shell).
+"app/gateway/wg.py" = ["S404", "S603", "S607"]
 
 [tool.black]
 line-length = 100

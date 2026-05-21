@@ -31,7 +31,7 @@ async def deploy(user: User) -> Lab:
     """Create a lab (first deploy) or redeploy the existing one. Enqueues build."""
     existing = await lab_repo.get_by_user(str(user.id))
     if existing is None:
-        ip = await ipam_service.allocate_ip()
+        ip = await ipam_service.allocate_lab_ip()
         lab = Lab(
             user_id=str(user.id),
             username=user.username,
@@ -90,7 +90,7 @@ async def start(user: User) -> Lab:
 async def destroy(user: User) -> None:
     lab = await _require_lab(user)
     await asyncio.to_thread(docker_service.remove_container, lab.username)
-    await ipam_service.release_ip(lab.internal_ip)
+    await ipam_service.release_lab_ip(lab.internal_ip)
     await lab_repo.delete(lab)
     log.info("lab.destroyed", user_id=str(user.id))
 

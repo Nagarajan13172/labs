@@ -17,6 +17,7 @@ services:
       mongodb: { condition: service_healthy }
       redis: { condition: service_healthy }
       rabbitmq: { condition: service_healthy }
+      wg-gateway: { condition: service_healthy }
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.api.rule=Host(`api.localhost`)"
@@ -106,5 +107,30 @@ services:
     depends_on:
       redis: { condition: service_healthy }
 
+  wg-gateway:
+    build:
+      context: .
+      dockerfile: docker/gateway/Dockerfile
+    env_file: .env
+    cap_add:
+      - NET_ADMIN
+      - SYS_MODULE
+    sysctls:
+      net.ipv4.ip_forward: 1
+      net.ipv4.conf.all.src_valid_mark: 1
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    volumes:
+      - wg_config:/etc/wireguard
+    ports:
+      - "51820:51820/udp"   # WireGuard endpoint clients dial
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8001/healthz')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
 volumes:
   mongo_data:
+  wg_config:

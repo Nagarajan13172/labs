@@ -71,7 +71,24 @@ class Settings(BaseSettings):
     lab_cpus: float = 1.0
     lab_home_path: str = "/home/coder"
 
-    @field_validator("cors_origins", "allowed_email_domains", mode="before")
+    # WireGuard / VPN (Phase 3)
+    vpn_subnet: str = "10.8.0.0/24"
+    wg_interface: str = "wg0"
+    wg_listen_port: int = 51820
+    wg_config_dir: str = "/etc/wireguard"
+    wg_server_endpoint: str = "localhost:51820"  # host:port clients dial
+    # Routes pushed to clients (VPN net + lab net so users can reach their lab).
+    wg_client_allowed_ips: Annotated[list[str], NoDecode] = Field(
+        default_factory=lambda: ["10.8.0.0/24", "172.30.0.0/24"]
+    )
+    max_client_peers: int = 3
+    # Scoped privileged helper that owns the WG interface.
+    gateway_url: str = "http://wg-gateway:8001"
+    gateway_token: str = "change-me-gateway-token"
+
+    @field_validator(
+        "cors_origins", "allowed_email_domains", "wg_client_allowed_ips", mode="before"
+    )
     @classmethod
     def _split_csv(cls, value: object) -> object:
         """Allow comma-separated env strings for list fields."""

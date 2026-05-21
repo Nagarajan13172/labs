@@ -87,9 +87,27 @@ Celery task that streams progress to MQTT topic `/topic/<username>`.
 > The api and worker mount `/var/run/docker.sock` and run as root in dev so they
 > can drive Docker. Production should use a Docker socket proxy or rootless setup.
 
+## WireGuard / VPN (Phase 3 — peers via a scoped helper)
+
+A dedicated **`wg-gateway`** service is the only privileged component: it owns
+the WireGuard interface (NET_ADMIN) and exposes a tiny, token-authenticated
+control API (add/remove/list peers, server info). The main API stays
+unprivileged — it generates keys in pure Python, allocates a VPN IP, and calls
+the gateway over the internal network. No `sudo`, no root password, no shell
+injection (every `wg`/`iptables` call is an argument list with validated input).
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/v1/network/peers` | Create a device peer (max 3); registers it on the gateway |
+| `GET /api/v1/network/peers` | List peers with live handshake/transfer stats |
+| `GET /api/v1/network/peers/{id}/config` | Download the client `wg0.conf` |
+| `GET /api/v1/network/peers/{id}/qr` | Client config as a QR PNG |
+| `DELETE /api/v1/network/peers/{id}` | Remove peer + release its VPN IP |
+
 ## Roadmap
 
 - **Phase 2 — DONE** ✅ Lab container provisioning (Celery + Docker SDK), atomic IP allocator.
-- **Phase 3** — WireGuard peers via a scoped privileged helper (no root password in app).
+- **Phase 3 — DONE** ✅ WireGuard peers via the scoped `wg-gateway` helper (no root password in app).
 - **Phase 4** — Traefik dynamic domains + DNS verification (route labs by hostname instead of host port).
 - **Phase 5** — DB-as-a-service (MySQL/MariaDB/MongoDB).
+- **Follow-up** — Wire the lab container into the VPN as a peer; route VPN clients to lab IPs (gateway on the labs network).
