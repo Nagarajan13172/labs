@@ -5,6 +5,7 @@ import { Nav } from "../components/Nav";
 import { Card } from "../components/Card";
 import { Badge } from "../components/Badge";
 import { Button } from "../components/Button";
+import { Skeleton, SkeletonRows } from "../components/Skeleton";
 import { networkApi, type DomainList } from "../api/network";
 import { quotaApi, type Quota } from "../api/quota";
 import { ApiError } from "../api/client";
@@ -40,6 +41,7 @@ export function Network() {
   const [newDomain, setNewDomain] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     const [p, d, q] = await Promise.allSettled([
@@ -53,6 +55,7 @@ export function Network() {
     }
     if (d.status === "fulfilled") setDomains(d.value);
     if (q.status === "fulfilled") setQuota(q.value);
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -181,6 +184,10 @@ export function Network() {
           <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
             <Card title={`Devices · ${peers.length}/${quota?.max_client_peers ?? "—"}`}>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                {loading ? (
+                  <SkeletonRows rows={3} />
+                ) : (
+                  <>
                 {peers.length === 0 && <div style={{ color: t.muted2, fontSize: 13 }}>No peers yet — add a device.</div>}
                 {peers.map((p, i) => {
                   const on = selected?.id === p.id;
@@ -226,11 +233,20 @@ export function Network() {
                     </Button>
                   </form>
                 )}
+                  </>
+                )}
               </div>
             </Card>
 
             <Card title={`Custom domains · ${domains?.domains.length ?? 0}/${quota?.max_domains ?? "—"}`}>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {loading ? (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                    <Skeleton w="70%" h={14} />
+                    <Skeleton w="55%" h={14} />
+                  </div>
+                ) : (
+                  <>
                 {(domains?.domains.length ?? 0) === 0 && <div style={{ color: t.muted2, fontSize: 13 }}>No custom domains.</div>}
                 {domains?.domains.map((d, i) => (
                   <div key={d} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", paddingTop: i ? 10 : 0, borderTop: i ? `1px solid ${t.rule}` : "none" }}>
@@ -252,13 +268,35 @@ export function Network() {
                   </Button>
                 </form>
                 )}
+                  </>
+                )}
               </div>
             </Card>
           </div>
 
           {/* RIGHT — selected peer */}
           <Card title={selected ? `Peer · ${selected.device_name}` : "Peer"} action={selected && <Badge tone={selected.latest_handshake ? "green" : "muted"}>{selected.latest_handshake ? "active" : "idle"}</Badge>}>
-            {!selected ? (
+            {loading ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+                  <Skeleton w={200} h={200} r={10} />
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 10 }}>
+                    <Skeleton w="90%" h={12} />
+                    <Skeleton w="80%" h={12} />
+                    <Skeleton w="100%" h={36} r={6} style={{ marginTop: 6 }} />
+                    <Skeleton w="100%" h={36} r={6} />
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  {[0, 1, 2, 3].map((i) => (
+                    <div key={i} style={{ display: "grid", gridTemplateColumns: "110px 1fr", gap: 12 }}>
+                      <Skeleton w={80} h={12} />
+                      <Skeleton w="75%" h={12} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : !selected ? (
               <div style={{ color: t.muted2, fontSize: 13 }}>Select a device to see its QR + config.</div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>

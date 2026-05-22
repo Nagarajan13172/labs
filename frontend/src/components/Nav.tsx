@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { gradient } from "../theme/atmos";
 import { useTheme } from "../theme/ThemeContext";
 import { Logo } from "./Logo";
 import { useAuth } from "../auth/AuthContext";
 import { CommandPalette } from "./CommandPalette";
 import { ThemeToggle } from "./ThemeToggle";
+import { UserMenu } from "./UserMenu";
 
 const TABS: [string, string][] = [
   ["/", "Overview"],
@@ -19,7 +19,7 @@ const TABS: [string, string][] = [
 export function Nav() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, signout } = useAuth();
+  const { user } = useAuth();
   const t = useTheme();
   const [paletteOpen, setPaletteOpen] = useState(false);
 
@@ -109,27 +109,7 @@ export function Nav() {
           + New
         </button>
 
-        <button
-          onClick={() => void signout()}
-          title="Sign out"
-          style={{
-            width: 28,
-            height: 28,
-            borderRadius: 999,
-            background: gradient,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontSize: 12,
-            fontWeight: 600,
-            color: t.bg,
-            border: "none",
-            cursor: "pointer",
-            textTransform: "uppercase",
-          }}
-        >
-          {(user?.username ?? "?").charAt(0)}
-        </button>
+        <UserMenu />
       </div>
 
       <div style={{ display: "flex", padding: "0 20px" }}>

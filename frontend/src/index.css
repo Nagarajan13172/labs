@@ -84,6 +84,39 @@ a {
   animation: atmos-pulse 2s ease-in-out infinite;
 }
 
+/* spinner rotation (global loader) */
+@keyframes ys-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* shimmering skeleton placeholder — follows the active theme via CSS vars */
+@keyframes ys-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+.ys-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--card-hi) 25%,
+    var(--rule2) 37%,
+    var(--card-hi) 63%
+  );
+  background-size: 400% 100%;
+  animation: ys-shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .ys-skeleton {
+    animation: none;
+  }
+}
+
 /* slim, unobtrusive scrollbars that follow the active theme */
 ::-webkit-scrollbar {
   width: 10px;

@@ -24,4 +24,6 @@ export const authApi = {
     api.post<null>("/auth/forgot-password", { email }, { auth: false }),
 
   me: () => api.get<User>("/users/me"),
+
+  updateProfile: (phone: string) => api.patch<User>("/users/me", { phone }),
 };

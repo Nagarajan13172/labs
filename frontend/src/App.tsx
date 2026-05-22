@@ -9,6 +9,8 @@ import { Labs } from "./pages/Labs";
 import { Network } from "./pages/Network";
 import { Databases } from "./pages/Databases";
 import { Settings } from "./pages/Settings";
+import { Profile } from "./pages/Profile";
+import { GlobalLoader } from "./components/GlobalLoader";
 
 // Lazy-loaded so the heavy mqtt.js client only loads when visiting Jobs.
 const Jobs = lazy(() => import("./pages/Jobs").then((m) => ({ default: m.Jobs })));
@@ -58,9 +60,17 @@ export default function App() {
         path="/jobs"
         element={
           <ProtectedRoute>
-            <Suspense fallback={null}>
+            <Suspense fallback={<GlobalLoader label="Loading jobs" />}>
               <Jobs />
             </Suspense>
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
           </ProtectedRoute>
         }
       />

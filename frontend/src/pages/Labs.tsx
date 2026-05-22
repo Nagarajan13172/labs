@@ -6,6 +6,7 @@ import { Nav } from "../components/Nav";
 import { Card } from "../components/Card";
 import { Badge, type Tone } from "../components/Badge";
 import { Button } from "../components/Button";
+import { Skeleton } from "../components/Skeleton";
 import { useAuth } from "../auth/AuthContext";
 import { labsApi } from "../api/labs";
 import { ApiError } from "../api/client";
@@ -92,16 +93,26 @@ export function Labs() {
             </div>
             <div>
               <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={{ fontSize: 22, fontWeight: 600, letterSpacing: -0.4 }}>{lab ? lab.name : "No lab"}</span>
+                {loading ? (
+                  <Skeleton w={150} h={24} r={6} />
+                ) : (
+                  <span style={{ fontSize: 22, fontWeight: 600, letterSpacing: -0.4 }}>{lab ? lab.name : "No lab"}</span>
+                )}
                 {lab && <Badge tone={tone(lab.status)}>{lab.status}</Badge>}
               </div>
-              <div style={{ color: t.muted, fontSize: 13, marginTop: 4, fontFamily: t.mono }}>
-                {loading ? "loading…" : lab ? `${lab.image || "code-server"} · ${lab.internal_ip}` : "deploy a code-server container on your private network"}
+              <div style={{ color: t.muted, fontSize: 13, marginTop: 6, fontFamily: t.mono }}>
+                {loading ? (
+                  <Skeleton w={200} h={12} />
+                ) : lab ? (
+                  `${lab.image || "code-server"} · ${lab.internal_ip}`
+                ) : (
+                  "deploy a code-server container on your private network"
+                )}
               </div>
             </div>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-            {!lab && (
+            {!loading && !lab && (
               <Button primary disabled={busy !== null} onClick={() => void run("deploy", labsApi.deploy)}>
                 {busy === "deploy" ? "Deploying…" : "+ Deploy lab"}
               </Button>
@@ -145,6 +156,31 @@ export function Labs() {
         {error && (
           <div style={{ marginTop: 18, padding: "10px 12px", borderRadius: 8, border: `1px solid ${t.red}55`, background: `${t.red}14`, color: t.red, fontSize: 13 }}>
             {error}
+          </div>
+        )}
+
+        {loading && (
+          <div style={{ marginTop: 24, display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 18 }}>
+            <Card title="Connection">
+              <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+                {[0, 1, 2].map((i) => (
+                  <div key={i}>
+                    <Skeleton w={100} h={12} style={{ marginBottom: 8 }} />
+                    <Skeleton w="100%" h={38} r={6} />
+                  </div>
+                ))}
+              </div>
+            </Card>
+            <Card title="Status">
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                {[0, 1, 2, 3, 4, 5].map((i) => (
+                  <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "9px 0", borderTop: i ? `1px solid ${t.rule}` : "none" }}>
+                    <Skeleton w={70} h={13} />
+                    <Skeleton w={120} h={13} />
+                  </div>
+                ))}
+              </div>
+            </Card>
           </div>
         )}
 

@@ -5,6 +5,7 @@ import { Nav } from "../components/Nav";
 import { Card } from "../components/Card";
 import { Badge } from "../components/Badge";
 import { Button } from "../components/Button";
+import { Skeleton } from "../components/Skeleton";
 import { useAuth } from "../auth/AuthContext";
 import { adminApi, type AdminStats, type AdminUser } from "../api/admin";
 import { ApiError } from "../api/client";
@@ -18,6 +19,18 @@ function StatCard({ label, value, sub }: { label: string; value: number | string
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 8 }}>
         <span style={{ fontSize: 28, fontWeight: 600, letterSpacing: -0.4 }}>{value}</span>
         {sub && <span style={{ fontSize: 12, color: t.muted }}>{sub}</span>}
+      </div>
+    </div>
+  );
+}
+
+function StatSkeleton() {
+  const t = useTheme();
+  return (
+    <div style={{ background: t.card, border: `1px solid ${t.rule}`, borderRadius: 10, padding: 16 }}>
+      <Skeleton w={56} h={12} />
+      <div style={{ marginTop: 12 }}>
+        <Skeleton w={70} h={26} />
       </div>
     </div>
   );
@@ -87,12 +100,17 @@ export function Settings() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
-    if (!isAdmin) return;
+    if (!isAdmin) {
+      setLoading(false);
+      return;
+    }
     const [s, u] = await Promise.allSettled([adminApi.stats(), adminApi.listUsers()]);
     if (s.status === "fulfilled") setStats(s.value);
     if (u.status === "fulfilled") setUsers(u.value);
+    setLoading(false);
   }, [isAdmin]);
 
   useEffect(() => {
@@ -174,10 +192,21 @@ export function Settings() {
 
             {/* platform stats */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
-              <StatCard label="Users" value={stats?.users_total ?? "—"} sub={stats ? `${stats.users_verified} verified` : ""} />
-              <StatCard label="Labs" value={stats?.labs_running ?? "—"} sub={stats ? `of ${stats.labs_total} total` : ""} />
-              <StatCard label="Peers" value={stats?.peers_total ?? "—"} sub="wireguard" />
-              <StatCard label="Databases" value={stats?.databases_total ?? "—"} sub="managed" />
+              {loading ? (
+                <>
+                  <StatSkeleton />
+                  <StatSkeleton />
+                  <StatSkeleton />
+                  <StatSkeleton />
+                </>
+              ) : (
+                <>
+                  <StatCard label="Users" value={stats?.users_total ?? "—"} sub={stats ? `${stats.users_verified} verified` : ""} />
+                  <StatCard label="Labs" value={stats?.labs_running ?? "—"} sub={stats ? `of ${stats.labs_total} total` : ""} />
+                  <StatCard label="Peers" value={stats?.peers_total ?? "—"} sub="wireguard" />
+                  <StatCard label="Databases" value={stats?.databases_total ?? "—"} sub="managed" />
+                </>
+              )}
             </div>
 
             {/* tenants */}
@@ -201,7 +230,33 @@ export function Settings() {
                   <span>Labs / Peers / DBs</span>
                   <span style={{ textAlign: "right" }}>Actions</span>
                 </div>
-                {users.map((u) => {
+                {loading
+                  ? [0, 1, 2, 3].map((i) => (
+                      <div
+                        key={i}
+                        style={{
+                          display: "grid",
+                          gridTemplateColumns: "2fr 1.2fr 1fr 140px 1fr",
+                          padding: "12px 18px",
+                          borderBottom: `1px solid ${t.rule}`,
+                          alignItems: "center",
+                          minWidth: 720,
+                          gap: 12,
+                        }}
+                      >
+                        <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                          <Skeleton w="50%" h={13} />
+                          <Skeleton w="72%" h={11} />
+                        </div>
+                        <Skeleton w={84} h={26} r={6} />
+                        <Skeleton w={64} h={18} r={999} />
+                        <Skeleton w={70} h={12} />
+                        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                          <Skeleton w={72} h={28} r={6} />
+                        </div>
+                      </div>
+                    ))
+                  : users.map((u) => {
                   const self = u.id === user?.id;
                   const locked = self || (u.role === "superadmin" && !isSuper);
                   return (

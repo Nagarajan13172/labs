@@ -5,6 +5,7 @@ import { Nav } from "../components/Nav";
 import { Card } from "../components/Card";
 import { Badge } from "../components/Badge";
 import { Button } from "../components/Button";
+import { Skeleton } from "../components/Skeleton";
 import { servicesApi, type EngineInfo } from "../api/services";
 import { ApiError } from "../api/client";
 import type { DatabaseEngine, ManagedDatabase } from "../api/types";
@@ -28,6 +29,7 @@ export function Databases() {
   const [name, setName] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     const [e, d] = await Promise.allSettled([servicesApi.listEngines(), servicesApi.listDatabases()]);
@@ -39,6 +41,7 @@ export function Databases() {
       setDbs(d.value);
       setSelected((cur) => cur ?? d.value[0] ?? null);
     }
+    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -111,8 +114,15 @@ export function Databases() {
         </div>
 
         {/* engines */}
-        <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: `repeat(${Math.max(engines.length, 1)}, 1fr)`, gap: 14 }}>
-          {engines.map((e) => (
+        <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: `repeat(${loading ? 3 : Math.max(engines.length, 1)}, 1fr)`, gap: 14 }}>
+          {loading
+            ? [0, 1, 2].map((i) => (
+                <div key={i} style={{ background: t.card, border: `1px solid ${t.rule}`, borderRadius: 10, padding: 16 }}>
+                  <Skeleton w="40%" h={16} />
+                  <Skeleton w="60%" h={12} style={{ marginTop: 10 }} />
+                </div>
+              ))
+            : engines.map((e) => (
             <div key={e.engine} style={{ background: e.engine === engine ? t.cardHi : t.card, border: `1px solid ${e.engine === engine ? t.rule2 : t.rule}`, borderRadius: 10, padding: 16 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 <span style={{ width: 6, height: 6, borderRadius: 999, background: t.green, boxShadow: `0 0 8px ${t.green}` }} />
@@ -134,7 +144,18 @@ export function Databases() {
         <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 18, alignItems: "start" }}>
           {/* table */}
           <Card title={`Your databases · ${dbs.length}`} padded={false}>
-            {dbs.length === 0 ? (
+            {loading ? (
+              [0, 1, 2].map((i) => (
+                <div key={i} style={{ display: "grid", gridTemplateColumns: "1fr auto auto", alignItems: "center", gap: 12, padding: "14px 18px", borderTop: i ? `1px solid ${t.rule}` : "none" }}>
+                  <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                    <Skeleton w="40%" h={13} />
+                    <Skeleton w="55%" h={11} />
+                  </div>
+                  <Skeleton w={48} h={12} />
+                  <Skeleton w={8} h={8} r={999} />
+                </div>
+              ))
+            ) : dbs.length === 0 ? (
               <div style={{ padding: 18, color: t.muted2, fontSize: 13 }}>No databases — create one above.</div>
             ) : (
               dbs.map((d, i) => {
@@ -175,7 +196,27 @@ export function Databases() {
 
           {/* detail */}
           <Card title={selected ? `Detail · ${selected.db_name}` : "Detail"} action={selected && <Badge tone="green">online</Badge>}>
-            {!selected ? (
+            {loading ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                <div>
+                  <Skeleton w={110} h={12} style={{ marginBottom: 8 }} />
+                  <Skeleton w="100%" h={44} r={6} />
+                  <div style={{ display: "flex", gap: 8, marginTop: 10 }}>
+                    <Skeleton w={90} h={30} r={6} />
+                    <Skeleton w={130} h={30} r={6} />
+                  </div>
+                </div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+                  {[0, 1, 2, 3, 4].map((i) => (
+                    <div key={i} style={{ display: "grid", gridTemplateColumns: "100px 1fr", gap: 12 }}>
+                      <Skeleton w={70} h={12} />
+                      <Skeleton w="70%" h={12} />
+                    </div>
+                  ))}
+                </div>
+                <Skeleton w="100%" h={34} r={6} />
+              </div>
+            ) : !selected ? (
               <div style={{ color: t.muted2, fontSize: 13 }}>Select a database to see its connection details.</div>
             ) : (
               <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>

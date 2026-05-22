@@ -9,6 +9,7 @@ import { Badge, type Tone } from "../components/Badge";
 import { Button } from "../components/Button";
 import { Area } from "../components/Area";
 import { Progress } from "../components/Progress";
+import { Skeleton, SkeletonRows } from "../components/Skeleton";
 import { useAuth } from "../auth/AuthContext";
 import { useLabStats } from "../hooks/useLabStats";
 import { labsApi } from "../api/labs";
@@ -57,6 +58,21 @@ function MetricCard({
             <div style={{ height: 1, width: "100%", background: t.rule }} />
           </div>
         )}
+      </div>
+    </div>
+  );
+}
+
+function MetricSkeleton() {
+  const t = useTheme();
+  return (
+    <div style={{ background: t.card, border: `1px solid ${t.rule}`, borderRadius: 10, padding: 16, overflow: "hidden" }}>
+      <Skeleton w={56} h={12} />
+      <div style={{ marginTop: 12 }}>
+        <Skeleton w={90} h={26} />
+      </div>
+      <div style={{ marginTop: 16 }}>
+        <Skeleton w="100%" h={20} />
       </div>
     </div>
   );
@@ -130,6 +146,15 @@ export function Dashboard() {
 
         {/* live metrics */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
+          {loading ? (
+            <>
+              <MetricSkeleton />
+              <MetricSkeleton />
+              <MetricSkeleton />
+              <MetricSkeleton />
+            </>
+          ) : (
+          <>
           <MetricCard
             label="CPU"
             value={running && s ? `${s.cpu_percent}%` : "—"}
@@ -158,13 +183,34 @@ export function Dashboard() {
             color={t.green}
             spark={[]}
           />
+          </>
+          )}
         </div>
 
         {/* main grid */}
         <div style={{ display: "grid", gridTemplateColumns: "1.5fr 1fr", gap: 18 }}>
           {/* active lab */}
           <Card title="Active lab" action={<Button size="sm" ghost onClick={() => navigate("/labs")}>View all →</Button>}>
-            {lab ? (
+            {loading ? (
+              <div style={{ display: "flex", flexDirection: "column" }}>
+                <div style={{ display: "flex", gap: 14, alignItems: "flex-start", padding: 4 }}>
+                  <Skeleton w={40} h={40} r={8} />
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", gap: 8 }}>
+                    <Skeleton w="45%" h={16} />
+                    <Skeleton w="65%" h={12} />
+                  </div>
+                </div>
+                <div style={{ marginTop: 14, padding: "14px 4px 0", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, borderTop: `1px solid ${t.rule}` }}>
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                      <Skeleton w={48} h={12} />
+                      <Skeleton w="70%" h={16} />
+                      <Skeleton w="100%" h={6} r={999} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : lab ? (
               <div style={{ display: "flex", flexDirection: "column" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", padding: 4 }}>
                   <div style={{ display: "flex", gap: 14, alignItems: "flex-start" }}>
@@ -228,6 +274,9 @@ export function Dashboard() {
               ) : undefined
             }
           >
+            {loading ? (
+              <SkeletonRows rows={3} />
+            ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12, fontSize: 13 }}>
               {[
                 lab ? ["lab", t.green, `Lab ${lab.status}`, `${lab.name} · ${lab.internal_ip}`] : ["lab", t.muted2, "No lab", "deploy one to get started"],
@@ -243,12 +292,16 @@ export function Dashboard() {
                 </div>
               ))}
             </div>
+            )}
           </Card>
         </div>
 
         {/* lower row */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 18 }}>
           <Card title="Peers" action={<Button size="sm" ghost onClick={() => navigate("/network")}>+ Add</Button>}>
+            {loading ? (
+              <SkeletonRows rows={3} />
+            ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12, fontSize: 13 }}>
               {peers.length === 0 && <div style={{ color: t.muted2, fontSize: 13 }}>No peers yet.</div>}
               {peers.slice(0, 4).map((p, i) => (
@@ -264,9 +317,13 @@ export function Dashboard() {
                 </div>
               ))}
             </div>
+            )}
           </Card>
 
           <Card title="Databases" action={<Button size="sm" ghost onClick={() => navigate("/databases")}>+ New</Button>}>
+            {loading ? (
+              <SkeletonRows rows={3} />
+            ) : (
             <div style={{ display: "flex", flexDirection: "column", gap: 12, fontSize: 13 }}>
               {dbs.length === 0 && <div style={{ color: t.muted2, fontSize: 13 }}>No databases yet.</div>}
               {dbs.slice(0, 4).map((d, i) => (
@@ -279,6 +336,7 @@ export function Dashboard() {
                 </div>
               ))}
             </div>
+            )}
           </Card>
         </div>
       </div>
