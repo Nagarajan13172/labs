@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import pytest
+from app.models.lab import LabStatus
 from app.repositories import lab_repo
 from app.services import docker_service
 from httpx import AsyncClient
@@ -112,6 +113,45 @@ async def test_destroy_removes_lab(
 
     gone = await client.get("/api/v1/labs", headers=headers)
     assert gone.json()["data"] is None
+
+
+async def test_lab_stats(
+    client: AsyncClient,
+    captured: dict[str, str],
+    mock_docker: dict[str, list],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    headers = await _auth(client, captured)
+
+    # No lab yet -> null
+    empty = await client.get("/api/v1/labs/stats", headers=headers)
+    assert empty.status_code == 200
+    assert empty.json()["data"] is None
+
+    # Simulate a provisioned, running lab.
+    await client.post("/api/v1/labs/deploy", headers=headers)
+    lab = await lab_repo.get_by_user(await _user_id(client, headers))
+    assert lab is not None
+    lab.container_id = "c1"
+    lab.status = LabStatus.RUNNING
+    await lab_repo.save(lab)
+
+    snapshot = {
+        "cpu_percent": 12.5,
+        "mem_used": 100,
+        "mem_limit": 1000,
+        "mem_percent": 10.0,
+        "rx_bytes": 2048,
+        "tx_bytes": 4096,
+    }
+    monkeypatch.setattr(docker_service, "get_stats", lambda cid: snapshot)
+
+    resp = await client.get("/api/v1/labs/stats", headers=headers)
+    assert resp.status_code == 200
+    data = resp.json()["data"]
+    assert data["cpu_percent"] == 12.5
+    assert data["mem_limit"] == 1000
+    assert data["rx_bytes"] == 2048
 
 
 async def test_labs_require_auth(client: AsyncClient) -> None:

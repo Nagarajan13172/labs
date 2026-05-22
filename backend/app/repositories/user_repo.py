@@ -19,6 +19,18 @@ async def get_by_email(email: str) -> User | None:
     return await User.find_one(User.email == email.lower())
 
 
+async def list_all() -> list[User]:
+    return await User.find_all().sort("-created_at").to_list()
+
+
+async def count() -> int:
+    return await User.find_all().count()
+
+
+async def count_verified() -> int:
+    return await User.find(User.is_verified == True).count()  # noqa: E712
+
+
 async def get_by_email_or_phone(email: str, phone: str) -> User | None:
     return await User.find_one(Or(User.email == email.lower(), User.phone == phone))
 

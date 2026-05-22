@@ -8,7 +8,7 @@ from app.core.exceptions import NotFoundError
 from app.dependencies import CurrentUser
 from app.repositories import lab_repo
 from app.schemas.common import ResponseEnvelope, ok
-from app.schemas.lab import LabCredentials, LabOut
+from app.schemas.lab import LabCredentials, LabOut, LabStats
 from app.services import lab_service
 
 router = APIRouter(prefix="/labs", tags=["Labs"])
@@ -39,6 +39,13 @@ async def get_credentials(user: CurrentUser) -> ResponseEnvelope[LabCredentials]
         "Lab credentials",
         data=LabCredentials(code_server_password=lab.code_server_password, host_port=lab.host_port),
     )
+
+
+@router.get("/stats", response_model=ResponseEnvelope[LabStats | None])
+async def get_lab_stats(user: CurrentUser) -> ResponseEnvelope[LabStats | None]:
+    """Live CPU / memory / network for the running lab (null if not running)."""
+    stats = await lab_service.get_stats(user)
+    return ok("Lab stats", data=LabStats(**stats) if stats else None)
 
 
 @router.post("/stop", response_model=ResponseEnvelope[LabOut])

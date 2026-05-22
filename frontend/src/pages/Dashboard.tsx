@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { t, gradient } from "../theme/atmos";
 import { Page } from "../components/Page";
@@ -9,6 +9,7 @@ import { Button } from "../components/Button";
 import { Area } from "../components/Area";
 import { Progress } from "../components/Progress";
 import { useAuth } from "../auth/AuthContext";
+import { useLabStats } from "../hooks/useLabStats";
 import { labsApi } from "../api/labs";
 import { networkApi } from "../api/network";
 import { servicesApi } from "../api/services";
@@ -17,8 +18,47 @@ import type { Lab, ManagedDatabase, PeerStatus } from "../api/types";
 const tone = (s: Lab["status"]): Tone =>
   s === "running" ? "green" : s === "failed" ? "red" : s === "stopped" ? "muted" : "amber";
 
-// Decorative sparkline data (no per-metric history endpoint yet).
-const SPARK = [8, 12, 9, 14, 16, 18, 22, 19, 28, 24, 18, 22, 26, 31, 24];
+function fmtBytes(n: number): string {
+  if (!n) return "0 B";
+  const u = ["B", "KB", "MB", "GB"];
+  const i = Math.min(Math.floor(Math.log(n) / Math.log(1024)), u.length - 1);
+  return `${(n / 1024 ** i).toFixed(i ? 1 : 0)} ${u[i]}`;
+}
+const fmtRate = (n: number) => `${fmtBytes(n)}/s`;
+const NET_FULL = 10 * 1024 * 1024; // 10 MB/s = "full" bar (viz only)
+
+function MetricCard({
+  label,
+  value,
+  sub,
+  color,
+  spark,
+}: {
+  label: string;
+  value: ReactNode;
+  sub: string;
+  color: string;
+  spark: number[];
+}) {
+  return (
+    <div style={{ background: t.card, border: `1px solid ${t.rule}`, borderRadius: 10, padding: 16, overflow: "hidden" }}>
+      <div style={{ fontSize: 12, color: t.muted, fontWeight: 500 }}>{label}</div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 8 }}>
+        <span style={{ fontSize: 28, fontWeight: 600, letterSpacing: -0.4, textTransform: "capitalize" }}>{value}</span>
+        <span style={{ fontSize: 12, color: t.muted }}>{sub}</span>
+      </div>
+      <div style={{ marginTop: 8, height: 36, marginInline: -16, marginBottom: -16 }}>
+        {spark.length > 1 ? (
+          <Area values={spark} color={color} height={36} fillOpacity={0.3} />
+        ) : (
+          <div style={{ height: 36, display: "flex", alignItems: "flex-end" }}>
+            <div style={{ height: 1, width: "100%", background: t.rule }} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -43,12 +83,8 @@ export function Dashboard() {
   }, []);
 
   const running = lab?.status === "running";
-  const metrics: [string, string, string, string, number[]][] = [
-    ["Labs", running ? "1" : "0", "running", t.blue, SPARK],
-    ["Peers", String(peers.length), "wireguard", t.purple, [3, 6, 4, 9, 5, 8, 12, 7, 6, 9, 4, 11, 8, 6, 5]],
-    ["Databases", String(dbs.length), "managed", t.cyan, [12, 18, 22, 19, 28, 38, 32, 24, 22, 26, 31, 28, 32, 36, 34]],
-    ["Status", lab ? lab.status : "—", lab ? "lab" : "no lab", t.green, [24, 24, 26, 28, 27, 28, 29, 30, 30, 30, 31, 30, 30, 30, 30]],
-  ];
+  const live = useLabStats(running); // polls /labs/stats every 3s while running
+  const s = live.stats;
 
   return (
     <Page>
@@ -60,9 +96,7 @@ export function Dashboard() {
             <div style={{ fontSize: 13, color: t.muted, marginBottom: 4 }}>
               <span style={{ color: t.muted2 }}>~ /</span> {user?.username} <span style={{ color: t.muted2 }}>/</span> overview
             </div>
-            <div style={{ fontSize: 26, fontWeight: 600, letterSpacing: -0.6 }}>
-              Welcome back, {user?.username}
-            </div>
+            <div style={{ fontSize: 26, fontWeight: 600, letterSpacing: -0.6 }}>Welcome back, {user?.username}</div>
             <div style={{ color: t.muted, fontSize: 14, marginTop: 4 }}>
               {loading ? (
                 "Loading workspace…"
@@ -91,20 +125,36 @@ export function Dashboard() {
           </div>
         </div>
 
-        {/* metrics */}
+        {/* live metrics */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14 }}>
-          {metrics.map(([label, val, sub, c, vals]) => (
-            <div key={label} style={{ background: t.card, border: `1px solid ${t.rule}`, borderRadius: 10, padding: 16, overflow: "hidden" }}>
-              <div style={{ fontSize: 12, color: t.muted, fontWeight: 500 }}>{label}</div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 8 }}>
-                <span style={{ fontSize: 28, fontWeight: 600, letterSpacing: -0.4, textTransform: "capitalize" }}>{val}</span>
-                <span style={{ fontSize: 12, color: t.muted }}>{sub}</span>
-              </div>
-              <div style={{ marginTop: 8, height: 36, marginInline: -16, marginBottom: -16 }}>
-                <Area values={vals} color={c} height={36} fillOpacity={0.3} />
-              </div>
-            </div>
-          ))}
+          <MetricCard
+            label="CPU"
+            value={running && s ? `${s.cpu_percent}%` : "—"}
+            sub={running ? "usage" : "no lab"}
+            color={t.blue}
+            spark={live.cpu}
+          />
+          <MetricCard
+            label="Memory"
+            value={running && s ? fmtBytes(s.mem_used) : "—"}
+            sub={running && s ? `of ${fmtBytes(s.mem_limit)}` : "—"}
+            color={t.purple}
+            spark={live.mem}
+          />
+          <MetricCard
+            label="Network"
+            value={running ? fmtRate(live.netRate) : "—"}
+            sub={running && s ? `↑ ${fmtBytes(s.tx_bytes)} · ↓ ${fmtBytes(s.rx_bytes)}` : "—"}
+            color={t.cyan}
+            spark={live.net}
+          />
+          <MetricCard
+            label="Status"
+            value={lab ? lab.status : "none"}
+            sub={lab ? "lab" : "deploy one"}
+            color={t.green}
+            spark={[]}
+          />
         </div>
 
         {/* main grid */}
@@ -142,9 +192,9 @@ export function Dashboard() {
                 </div>
                 <div style={{ marginTop: 14, padding: "14px 4px 0", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14, borderTop: `1px solid ${t.rule}` }}>
                   {[
-                    ["CPU", "24%", 24, t.blue],
-                    ["Memory", "1.2/4 G", 30, t.purple],
-                    ["Network", "21 MB/s", 42, t.cyan],
+                    ["CPU", running && s ? `${s.cpu_percent}%` : "—", running && s ? s.cpu_percent : 0, t.blue],
+                    ["Memory", running && s ? `${fmtBytes(s.mem_used)} / ${fmtBytes(s.mem_limit)}` : "—", running && s ? s.mem_percent : 0, t.purple],
+                    ["Network", running ? fmtRate(live.netRate) : "—", running ? Math.min((live.netRate / NET_FULL) * 100, 100) : 0, t.cyan],
                   ].map(([k, v, val, c]) => (
                     <div key={k as string}>
                       <div style={{ fontSize: 12, color: t.muted }}>{k}</div>
@@ -163,31 +213,23 @@ export function Dashboard() {
             )}
           </Card>
 
-          {/* activity-ish summary */}
+          {/* derived activity */}
           <Card
             title="Activity"
             action={
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: t.muted }}>
-                <span className="atmos-pulse" style={{ width: 6, height: 6, background: t.green, borderRadius: 999, boxShadow: `0 0 8px ${t.green}` }} />
-                Live · MQTT
-              </span>
+              running ? (
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: t.muted }}>
+                  <span className="atmos-pulse" style={{ width: 6, height: 6, background: t.green, borderRadius: 999, boxShadow: `0 0 8px ${t.green}` }} />
+                  Live
+                </span>
+              ) : undefined
             }
           >
             <div style={{ display: "flex", flexDirection: "column", gap: 12, fontSize: 13 }}>
               {[
                 lab ? ["lab", t.green, `Lab ${lab.status}`, `${lab.name} · ${lab.internal_ip}`] : ["lab", t.muted2, "No lab", "deploy one to get started"],
-                [
-                  "peers",
-                  peers.length ? t.blue : t.muted2,
-                  `${peers.length} WireGuard ${peers.length === 1 ? "peer" : "peers"}`,
-                  peers[0] ? peers[0].device_name : "none yet",
-                ],
-                [
-                  "db",
-                  dbs.length ? t.cyan : t.muted2,
-                  `${dbs.length} ${dbs.length === 1 ? "database" : "databases"}`,
-                  dbs[0] ? `${dbs[0].db_name} · ${dbs[0].engine}` : "none yet",
-                ],
+                ["peers", peers.length ? t.blue : t.muted2, `${peers.length} WireGuard ${peers.length === 1 ? "peer" : "peers"}`, peers[0] ? peers[0].device_name : "none yet"],
+                ["db", dbs.length ? t.cyan : t.muted2, `${dbs.length} ${dbs.length === 1 ? "database" : "databases"}`, dbs[0] ? `${dbs[0].db_name} · ${dbs[0].engine}` : "none yet"],
               ].map(([k, c, h, sub], i) => (
                 <div key={k as string} style={{ display: "flex", gap: 12, alignItems: "flex-start", paddingTop: i ? 12 : 0, borderTop: i ? `1px solid ${t.rule}` : "none" }}>
                   <div style={{ width: 8, height: 8, background: c as string, borderRadius: 999, marginTop: 5, boxShadow: `0 0 8px ${c}60`, flexShrink: 0 }} />

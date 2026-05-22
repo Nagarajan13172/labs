@@ -156,3 +156,50 @@ def get_status(container_id: str) -> str:
         return str(get_client().containers.get(container_id).status)
     except NotFound:
         return "missing"
+
+
+def _cpu_percent(stats: dict[str, Any]) -> float:
+    """Compute CPU% from a one-shot stats snapshot (cpu vs precpu deltas)."""
+    cpu = stats.get("cpu_stats", {})
+    pre = stats.get("precpu_stats", {})
+    try:
+        cpu_delta = cpu["cpu_usage"]["total_usage"] - pre["cpu_usage"]["total_usage"]
+        system_delta = cpu["system_cpu_usage"] - pre["system_cpu_usage"]
+        online = cpu.get("online_cpus") or len(cpu["cpu_usage"].get("percpu_usage") or [1])
+    except (KeyError, TypeError):
+        return 0.0
+    if system_delta <= 0 or cpu_delta < 0:
+        return 0.0
+    return round((cpu_delta / system_delta) * online * 100, 1)
+
+
+def get_stats(container_id: str) -> dict[str, Any] | None:
+    """Live resource usage for a running container, or None if it's gone."""
+    try:
+        container = get_client().containers.get(container_id)
+        if container.status != "running":
+            return None
+        stats = container.stats(stream=False)
+    except NotFound:
+        return None
+
+    mem = stats.get("memory_stats", {})
+    mem_used = int(mem.get("usage", 0))
+    # Exclude page cache from "used" when the kernel reports it (cgroup v1/v2).
+    cache = (mem.get("stats", {}) or {}).get("inactive_file", 0)
+    mem_used = max(mem_used - int(cache), 0)
+    mem_limit = int(mem.get("limit", 0))
+
+    rx = tx = 0
+    for iface in (stats.get("networks") or {}).values():
+        rx += int(iface.get("rx_bytes", 0))
+        tx += int(iface.get("tx_bytes", 0))
+
+    return {
+        "cpu_percent": _cpu_percent(stats),
+        "mem_used": mem_used,
+        "mem_limit": mem_limit,
+        "mem_percent": round((mem_used / mem_limit) * 100, 1) if mem_limit else 0.0,
+        "rx_bytes": rx,
+        "tx_bytes": tx,
+    }

@@ -1,65 +1,44 @@
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { t } from "../theme/atmos";
 import { Page } from "../components/Page";
 import { Nav } from "../components/Nav";
 import { Card } from "../components/Card";
-import { Badge } from "../components/Badge";
+import { Badge, type Tone } from "../components/Badge";
 import { Button } from "../components/Button";
+import { useAuth } from "../auth/AuthContext";
+import { useMqttJobs, type JobMessage, type MqttState } from "../hooks/useMqttJobs";
 import { jobsApi } from "../api/jobs";
 import { ApiError } from "../api/client";
 
-interface LogLine {
-  ts: string;
-  msg: string;
-  detail: string;
-  tone: "green" | "blue" | "amber" | "red" | "muted";
-}
+const STATE_META: Record<MqttState, { tone: Tone; label: string }> = {
+  connected: { tone: "green", label: "Live" },
+  connecting: { tone: "amber", label: "Connecting…" },
+  offline: { tone: "muted", label: "Offline" },
+  error: { tone: "red", label: "Error" },
+};
 
-const now = () => new Date().toLocaleTimeString("en-GB", { hour12: false });
-const dot = { green: t.green, blue: t.blue, amber: t.amber, red: t.red, muted: t.muted2 };
+const lineTone = (m: JobMessage): string =>
+  m.is_error ? t.red : m.is_finished ? t.green : m.status ? t.blue : t.muted;
 
 export function Jobs() {
-  const [log, setLog] = useState<LogLine[]>([]);
-  const [running, setRunning] = useState(false);
+  const { user } = useAuth();
+  const { messages, state, clear } = useMqttJobs(user?.username);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const active = useRef(false);
-
-  const push = (line: LogLine) => setLog((l) => [...l, line]);
 
   async function runSample() {
-    if (active.current) return;
-    active.current = true;
-    setRunning(true);
+    setBusy(true);
     setError(null);
-    push({ ts: now(), msg: "task.enqueue", detail: "sample.long_task", tone: "muted" });
     try {
-      const { task_id, topic } = await jobsApi.runSample();
-      push({ ts: now(), msg: "task.accepted", detail: `${task_id.slice(0, 8)} · ${topic}`, tone: "blue" });
-      let last = "";
-      for (let i = 0; i < 40; i++) {
-        await new Promise((r) => setTimeout(r, 1000));
-        const s = await jobsApi.status(task_id);
-        if (s.state !== last) {
-          last = s.state;
-          const tone = s.state === "SUCCESS" ? "green" : s.state === "FAILURE" ? "red" : "amber";
-          push({ ts: now(), msg: `state.${s.state.toLowerCase()}`, detail: "", tone });
-        }
-        if (s.state === "SUCCESS") {
-          push({ ts: now(), msg: "task.done", detail: JSON.stringify(s.result), tone: "green" });
-          break;
-        }
-        if (s.state === "FAILURE") {
-          push({ ts: now(), msg: "task.failed", detail: String(s.result), tone: "red" });
-          break;
-        }
-      }
+      await jobsApi.runSample(); // progress streams in live over MQTT
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Job failed");
+      setError(err instanceof ApiError ? err.message : "Failed to enqueue job");
     } finally {
-      active.current = false;
-      setRunning(false);
+      setBusy(false);
     }
   }
+
+  const meta = STATE_META[state];
 
   return (
     <Page>
@@ -69,13 +48,18 @@ export function Jobs() {
           <div>
             <div style={{ fontSize: 26, fontWeight: 600, letterSpacing: -0.6 }}>Jobs</div>
             <div style={{ color: t.muted, fontSize: 14, marginTop: 4 }}>
-              Background tasks run on Celery and stream progress over MQTT.
+              Real-time activity streamed over MQTT — lab deploys and background tasks appear here as
+              they happen.
             </div>
           </div>
           <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-            <Badge tone={running ? "amber" : "green"}>{running ? "running" : "idle"}</Badge>
-            <Button primary disabled={running} onClick={() => void runSample()}>
-              {running ? "Running…" : "▸ Run sample job"}
+            <Badge tone={meta.tone}>
+              <span className={state === "connected" ? "atmos-pulse" : undefined} style={{ display: "contents" }}>
+                {meta.label}
+              </span>
+            </Badge>
+            <Button disabled={busy} onClick={() => void runSample()}>
+              {busy ? "Enqueuing…" : "▸ Run sample job"}
             </Button>
           </div>
         </div>
@@ -88,30 +72,69 @@ export function Jobs() {
 
         <div style={{ marginTop: 22 }}>
           <Card
-            title="Task stream"
+            title="Live activity"
             action={
-              <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: t.muted }}>
-                <span className="atmos-pulse" style={{ width: 6, height: 6, background: t.green, borderRadius: 999, boxShadow: `0 0 8px ${t.green}` }} />
-                polled · MQTT live = follow-up
+              <span style={{ display: "flex", gap: 12, alignItems: "center" }}>
+                <span style={{ fontSize: 12, color: t.muted, fontFamily: t.mono }}>
+                  {messages.length} {messages.length === 1 ? "event" : "events"}
+                </span>
+                {messages.length > 0 && (
+                  <button onClick={clear} style={{ background: "transparent", border: "none", cursor: "pointer", fontSize: 12, color: t.muted }}>
+                    Clear
+                  </button>
+                )}
               </span>
             }
             bodyStyle={{ padding: 0 }}
           >
-            <div style={{ padding: 18, fontFamily: t.mono, fontSize: 13, lineHeight: 1.9, minHeight: 240 }}>
-              {log.length === 0 ? (
-                <span style={{ color: t.muted2 }}>No jobs yet — run the sample task to watch it stream through Celery.</span>
+            <div style={{ padding: 18, fontFamily: t.mono, fontSize: 13, lineHeight: 1.9, minHeight: 280, maxHeight: 460, overflowY: "auto" }}>
+              {messages.length === 0 ? (
+                <div style={{ color: t.muted2 }}>
+                  {state === "connected"
+                    ? "Waiting for activity — run a job or deploy a lab to see live progress."
+                    : state === "connecting"
+                      ? "Connecting to the live stream…"
+                      : "Live stream offline. Is the backend (RabbitMQ web-MQTT) running?"}
+                </div>
               ) : (
-                log.map((l, i) => (
-                  <div key={i} style={{ display: "grid", gridTemplateColumns: "88px 16px 220px 1fr", columnGap: 12, alignItems: "baseline" }}>
-                    <span style={{ color: t.muted2 }}>{l.ts}</span>
-                    <span style={{ width: 7, height: 7, borderRadius: 999, background: dot[l.tone], boxShadow: `0 0 8px ${dot[l.tone]}80`, alignSelf: "center" }} />
-                    <span style={{ color: t.text2, fontWeight: 500 }}>{l.msg}</span>
-                    <span style={{ color: t.muted, wordBreak: "break-all" }}>{l.detail}</span>
-                  </div>
-                ))
+                messages.map((m, i) => {
+                  const latest = i === messages.length - 1;
+                  const color = lineTone(m);
+                  return (
+                    <div key={i} style={{ display: "grid", gridTemplateColumns: "88px 16px 1fr", columnGap: 12, alignItems: "baseline" }}>
+                      <span style={{ color: t.muted2 }}>{m.ts}</span>
+                      <span
+                        style={{
+                          width: 7,
+                          height: 7,
+                          borderRadius: 999,
+                          background: color,
+                          boxShadow: `0 0 8px ${color}80`,
+                          alignSelf: "center",
+                        }}
+                      />
+                      <span
+                        style={{
+                          color: m.is_error ? t.red : t.text,
+                          fontWeight: latest ? 600 : 400,
+                          wordBreak: "break-word",
+                        }}
+                      >
+                        {m.message}
+                        {m.is_finished && !m.is_error && (
+                          <span style={{ color: t.green, marginLeft: 8, fontSize: 11 }}>● done</span>
+                        )}
+                      </span>
+                    </div>
+                  );
+                })
               )}
             </div>
           </Card>
+
+          <div style={{ marginTop: 12, fontSize: 12, color: t.muted2, fontFamily: t.mono }}>
+            subscribed to mqtt://…/topic/{user?.username} · RabbitMQ web-MQTT
+          </div>
         </div>
       </div>
     </Page>

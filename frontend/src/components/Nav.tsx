@@ -1,7 +1,9 @@
+import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { t, gradient } from "../theme/atmos";
 import { Logo } from "./Logo";
 import { useAuth } from "../auth/AuthContext";
+import { CommandPalette } from "./CommandPalette";
 
 const TABS: [string, string][] = [
   ["/", "Overview"],
@@ -16,6 +18,19 @@ export function Nav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signout } = useAuth();
+  const [paletteOpen, setPaletteOpen] = useState(false);
+
+  // Global ⌘K / Ctrl+K to open the command palette.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setPaletteOpen(true);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const active = (path: string) =>
     path === "/" ? location.pathname === "/" : location.pathname.startsWith(path);
@@ -49,7 +64,8 @@ export function Nav() {
 
         <div style={{ flex: 1 }} />
 
-        <div
+        <button
+          onClick={() => setPaletteOpen(true)}
           style={{
             display: "flex",
             alignItems: "center",
@@ -60,6 +76,7 @@ export function Nav() {
             fontSize: 13,
             color: t.muted,
             background: t.bg2,
+            cursor: "pointer",
           }}
         >
           <svg width="13" height="13" viewBox="0 0 13 13" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -70,7 +87,7 @@ export function Nav() {
           <span style={{ marginLeft: 24, padding: "1px 5px", background: t.cardHi, borderRadius: 3, fontFamily: t.mono, fontSize: 11 }}>
             ⌘K
           </span>
-        </div>
+        </button>
 
         <a
           href="http://localhost:8000/docs"
@@ -134,6 +151,8 @@ export function Nav() {
           );
         })}
       </div>
+
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
     </div>
   );
 }

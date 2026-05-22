@@ -1,3 +1,4 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { ProtectedRoute } from "./auth/ProtectedRoute";
 import { SignIn } from "./pages/SignIn";
@@ -7,8 +8,10 @@ import { Dashboard } from "./pages/Dashboard";
 import { Labs } from "./pages/Labs";
 import { Network } from "./pages/Network";
 import { Databases } from "./pages/Databases";
-import { Jobs } from "./pages/Jobs";
-import { Placeholder } from "./pages/Placeholder";
+import { Settings } from "./pages/Settings";
+
+// Lazy-loaded so the heavy mqtt.js client only loads when visiting Jobs.
+const Jobs = lazy(() => import("./pages/Jobs").then((m) => ({ default: m.Jobs })));
 
 export default function App() {
   return (
@@ -55,7 +58,9 @@ export default function App() {
         path="/jobs"
         element={
           <ProtectedRoute>
-            <Jobs />
+            <Suspense fallback={null}>
+              <Jobs />
+            </Suspense>
           </ProtectedRoute>
         }
       />
@@ -63,7 +68,7 @@ export default function App() {
         path="/admin"
         element={
           <ProtectedRoute>
-            <Placeholder title="Admin" phase="ROLE · RESTRICTED" />
+            <Settings />
           </ProtectedRoute>
         }
       />

@@ -40,3 +40,14 @@ class LabCredentials(BaseModel):
 
     code_server_password: str
     host_port: int | None
+
+
+class LabStats(BaseModel):
+    """Live container resource usage (one-shot snapshot)."""
+
+    cpu_percent: float
+    mem_used: int
+    mem_limit: int
+    mem_percent: float
+    rx_bytes: int
+    tx_bytes: int

@@ -49,3 +49,7 @@ def require_role(*roles: UserRole) -> Callable[[User], Coroutine[Any, Any, User]
         return user
 
     return _guard
+
+
+# Acting admin (admin or superadmin) — yields the user so routes can run guards.
+AdminUser = Annotated[User, Depends(require_role(UserRole.ADMIN, UserRole.SUPERADMIN))]

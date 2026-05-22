@@ -67,6 +67,14 @@ async def get_with_live_status(user: User) -> Lab | None:
     return lab
 
 
+async def get_stats(user: User) -> dict | None:
+    """Live resource usage for the user's running lab, or None if not running."""
+    lab = await lab_repo.get_by_user(str(user.id))
+    if lab is None or lab.container_id is None or lab.status != LabStatus.RUNNING:
+        return None
+    return await asyncio.to_thread(docker_service.get_stats, lab.container_id)
+
+
 async def stop(user: User) -> Lab:
     lab = await _require_lab(user)
     if lab.container_id:

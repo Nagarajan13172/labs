@@ -1,5 +1,5 @@
 import { api } from "./client";
-import type { Lab, LabCredentials } from "./types";
+import type { Lab, LabCredentials, LabStats } from "./types";
 
 export const labsApi = {
   get: () => api.get<Lab | null>("/labs"),
@@ -8,4 +8,5 @@ export const labsApi = {
   start: () => api.post<Lab>("/labs/start"),
   destroy: () => api.del<null>("/labs"),
   credentials: () => api.get<LabCredentials>("/labs/credentials"),
+  stats: () => api.get<LabStats | null>("/labs/stats"),
 };

@@ -6,6 +6,7 @@ import { Card } from "../components/Card";
 import { Badge } from "../components/Badge";
 import { Button } from "../components/Button";
 import { networkApi, type DomainList } from "../api/network";
+import { quotaApi, type Quota } from "../api/quota";
 import { ApiError } from "../api/client";
 import type { PeerStatus } from "../api/types";
 
@@ -34,18 +35,24 @@ export function Network() {
   const [config, setConfig] = useState<string | null>(null);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [domains, setDomains] = useState<DomainList | null>(null);
+  const [quota, setQuota] = useState<Quota | null>(null);
   const [newDevice, setNewDevice] = useState("");
   const [newDomain, setNewDomain] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
-    const [p, d] = await Promise.allSettled([networkApi.listPeers(), networkApi.listDomains()]);
+    const [p, d, q] = await Promise.allSettled([
+      networkApi.listPeers(),
+      networkApi.listDomains(),
+      quotaApi.get(),
+    ]);
     if (p.status === "fulfilled") {
       setPeers(p.value);
       setSelected((cur) => cur ?? p.value[0] ?? null);
     }
     if (d.status === "fulfilled") setDomains(d.value);
+    if (q.status === "fulfilled") setQuota(q.value);
   }, []);
 
   useEffect(() => {
@@ -172,7 +179,7 @@ export function Network() {
         <div style={{ marginTop: 22, display: "grid", gridTemplateColumns: "1fr 1.1fr", gap: 18, alignItems: "start" }}>
           {/* LEFT — peers + domains */}
           <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-            <Card title={`Devices · ${peers.length}/3`}>
+            <Card title={`Devices · ${peers.length}/${quota?.max_client_peers ?? "—"}`}>
               <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                 {peers.length === 0 && <div style={{ color: t.muted2, fontSize: 13 }}>No peers yet — add a device.</div>}
                 {peers.map((p, i) => {
@@ -207,16 +214,22 @@ export function Network() {
                     </button>
                   );
                 })}
-                <form onSubmit={addPeer} style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                  <input style={input} value={newDevice} onChange={(e) => setNewDevice(e.target.value)} placeholder="device name (e.g. macbook)" />
-                  <Button primary type="submit" disabled={busy !== null}>
-                    {busy === "peer" ? "Adding…" : "Add"}
-                  </Button>
-                </form>
+                {quota && peers.length >= quota.max_client_peers ? (
+                  <div style={{ fontSize: 12, color: t.muted2, marginTop: 4 }}>
+                    Peer limit reached ({quota.max_client_peers}). Revoke one to add another.
+                  </div>
+                ) : (
+                  <form onSubmit={addPeer} style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                    <input style={input} value={newDevice} onChange={(e) => setNewDevice(e.target.value)} placeholder="device name (e.g. macbook)" />
+                    <Button primary type="submit" disabled={busy !== null}>
+                      {busy === "peer" ? "Adding…" : "Add"}
+                    </Button>
+                  </form>
+                )}
               </div>
             </Card>
 
-            <Card title={`Custom domains · ${domains?.domains.length ?? 0}/5`}>
+            <Card title={`Custom domains · ${domains?.domains.length ?? 0}/${quota?.max_domains ?? "—"}`}>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 {(domains?.domains.length ?? 0) === 0 && <div style={{ color: t.muted2, fontSize: 13 }}>No custom domains.</div>}
                 {domains?.domains.map((d, i) => (
@@ -227,12 +240,18 @@ export function Network() {
                     </button>
                   </div>
                 ))}
+                {quota && (domains?.domains.length ?? 0) >= quota.max_domains ? (
+                  <div style={{ fontSize: 12, color: t.muted2, marginTop: 4 }}>
+                    Domain limit reached ({quota.max_domains}).
+                  </div>
+                ) : (
                 <form onSubmit={addDomain} style={{ display: "flex", gap: 8, marginTop: 4 }}>
                   <input style={input} value={newDomain} onChange={(e) => setNewDomain(e.target.value)} placeholder="app.example.com" />
                   <Button type="submit" disabled={busy !== null}>
                     {busy === "domain" ? "Adding…" : "Add"}
                   </Button>
                 </form>
+                )}
               </div>
             </Card>
           </div>

@@ -44,6 +44,15 @@ export interface LabCredentials {
   host_port: number | null;
 }
 
+export interface LabStats {
+  cpu_percent: number;
+  mem_used: number;
+  mem_limit: number;
+  mem_percent: number;
+  rx_bytes: number;
+  tx_bytes: number;
+}
+
 export interface PeerStatus {
   id: string;
   device_name: string;
