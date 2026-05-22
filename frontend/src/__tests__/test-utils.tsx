@@ -15,6 +15,13 @@ import type {
 
 // ---- render helpers ---------------------------------------------------------
 
+// Opt the test routers into React Router v7 behaviour so the v6 future-flag
+// warnings stay out of test output. Test-only: production routing is unchanged.
+export const routerFuture = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+} as const;
+
 interface RouterRenderOptions extends Omit<RenderOptions, "wrapper"> {
   route?: string;
 }
@@ -23,7 +30,9 @@ interface RouterRenderOptions extends Omit<RenderOptions, "wrapper"> {
 export function renderWithRouter(ui: ReactElement, opts: RouterRenderOptions = {}) {
   const { route = "/", ...rest } = opts;
   const Wrapper = ({ children }: { children: ReactNode }) => (
-    <MemoryRouter initialEntries={[route]}>{children}</MemoryRouter>
+    <MemoryRouter initialEntries={[route]} future={routerFuture}>
+      {children}
+    </MemoryRouter>
   );
   return render(ui, { wrapper: Wrapper, ...rest });
 }

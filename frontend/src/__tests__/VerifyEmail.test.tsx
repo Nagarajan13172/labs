@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { routerFuture } from "./test-utils";
 
 vi.mock("../api/auth", () => ({ authApi: { verifyEmail: vi.fn() } }));
 
@@ -9,7 +10,7 @@ import { authApi } from "../api/auth";
 
 function renderAt(search: string) {
   return render(
-    <MemoryRouter initialEntries={[`/auth/verify${search}`]}>
+    <MemoryRouter initialEntries={[`/auth/verify${search}`]} future={routerFuture}>
       <Routes>
         <Route path="/auth/verify" element={<VerifyEmail />} />
         <Route path="/auth/signin" element={<div>sign in page</div>} />

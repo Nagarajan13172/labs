@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
+import { routerFuture } from "./test-utils";
 
 const { navigate, signin } = vi.hoisted(() => ({ navigate: vi.fn(), signin: vi.fn() }));
 
@@ -17,7 +18,7 @@ let fetchMock: ReturnType<typeof vi.fn>;
 
 function renderSignIn(state?: { from?: string }) {
   return render(
-    <MemoryRouter initialEntries={[{ pathname: "/auth/signin", state }]}>
+    <MemoryRouter initialEntries={[{ pathname: "/auth/signin", state }]} future={routerFuture}>
       <Routes>
         <Route path="/auth/signin" element={<SignIn />} />
       </Routes>

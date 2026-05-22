@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter, Routes, Route } from "react-router-dom";
-import { fakeUser } from "./test-utils";
+import { fakeUser, routerFuture } from "./test-utils";
 
 const { authState } = vi.hoisted(() => ({
   authState: { current: { user: null as ReturnType<typeof Object> | null, loading: false } },
@@ -15,7 +15,7 @@ import { ProtectedRoute } from "../auth/ProtectedRoute";
 
 function renderAt(path = "/secret") {
   return render(
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter initialEntries={[path]} future={routerFuture}>
       <Routes>
         <Route
           path="/secret"
