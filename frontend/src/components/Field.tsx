@@ -1,5 +1,5 @@
 import { useState, type InputHTMLAttributes, type ReactNode } from "react";
-import { t } from "../theme/atmos";
+import { useTheme } from "../theme/ThemeContext";
 
 interface Props extends InputHTMLAttributes<HTMLInputElement> {
   label: string;
@@ -8,6 +8,7 @@ interface Props extends InputHTMLAttributes<HTMLInputElement> {
 
 // V4 labelled input — dark surface, blue focus ring.
 export function Field({ label, hint, style, ...rest }: Props) {
+  const t = useTheme();
   const [focused, setFocused] = useState(false);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>

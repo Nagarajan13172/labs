@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { t } from "../theme/atmos";
+import { useTheme } from "../theme/ThemeContext";
 
 // Dark app surface. `gradient` adds the auth-screen radial glow + grid.
 export function Page({
@@ -11,6 +11,7 @@ export function Page({
   style?: CSSProperties;
   gradient?: boolean;
 }) {
+  const t = useTheme();
   return (
     <div
       style={{

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { t } from "../theme/atmos";
+import { useTheme } from "../theme/ThemeContext";
 import { Page } from "../components/Page";
 import { Nav } from "../components/Nav";
 import { Card } from "../components/Card";
@@ -9,17 +9,17 @@ import { servicesApi, type EngineInfo } from "../api/services";
 import { ApiError } from "../api/client";
 import type { DatabaseEngine, ManagedDatabase } from "../api/types";
 
-const fieldStyle: React.CSSProperties = {
-  background: t.bg2,
-  border: `1px solid ${t.rule2}`,
-  borderRadius: 6,
-  padding: "8px 12px",
-  fontSize: 13,
-  color: t.text,
-  outline: "none",
-};
-
 export function Databases() {
+  const t = useTheme();
+  const fieldStyle: React.CSSProperties = {
+    background: t.bg2,
+    border: `1px solid ${t.rule2}`,
+    borderRadius: 6,
+    padding: "8px 12px",
+    fontSize: 13,
+    color: t.text,
+    outline: "none",
+  };
   const [engines, setEngines] = useState<EngineInfo[]>([]);
   const [dbs, setDbs] = useState<ManagedDatabase[]>([]);
   const [selected, setSelected] = useState<ManagedDatabase | null>(null);

@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useLocation, Link } from "react-router-dom";
-import { t } from "../theme/atmos";
+import { useTheme } from "../theme/ThemeContext";
 import { AuthShell } from "../components/AuthShell";
 import { Button } from "../components/Button";
 import { Field } from "../components/Field";
@@ -8,6 +8,7 @@ import { useAuth } from "../auth/AuthContext";
 import { ApiError } from "../api/client";
 
 export function SignIn() {
+  const t = useTheme();
   const { signin } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();

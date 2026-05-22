@@ -1,6 +1,6 @@
 import { useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
-import { t } from "../theme/atmos";
+import { useTheme } from "../theme/ThemeContext";
 import { AuthShell } from "../components/AuthShell";
 import { Button } from "../components/Button";
 import { Field } from "../components/Field";
@@ -8,6 +8,7 @@ import { authApi } from "../api/auth";
 import { ApiError } from "../api/client";
 
 export function SignUp() {
+  const t = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");

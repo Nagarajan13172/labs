@@ -1,9 +1,9 @@
-import { t } from "../theme/atmos";
+import { useTheme } from "../theme/ThemeContext";
 
 // Area-style sparkline (filled gradient under a polyline). Stretches to fill.
 export function Area({
   values,
-  color = t.blue,
+  color,
   width = "100%",
   height = 80,
   fillOpacity = 0.25,
@@ -14,6 +14,8 @@ export function Area({
   height?: number;
   fillOpacity?: number;
 }) {
+  const t = useTheme();
+  const stroke = color ?? t.blue;
   const max = Math.max(...values, 1);
   const min = Math.min(...values, 0);
   const range = max - min || 1;
@@ -26,7 +28,7 @@ export function Area({
   });
   const line = pts.join(" ");
   const area = `0,${h} ${line} ${w},${h}`;
-  const gid = `atmos-area-${color.replace("#", "")}-${Math.round(fillOpacity * 100)}`;
+  const gid = `atmos-area-${stroke.replace("#", "")}-${Math.round(fillOpacity * 100)}`;
   return (
     <svg
       width={width}
@@ -37,15 +39,15 @@ export function Area({
     >
       <defs>
         <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor={color} stopOpacity={fillOpacity} />
-          <stop offset="1" stopColor={color} stopOpacity="0" />
+          <stop offset="0" stopColor={stroke} stopOpacity={fillOpacity} />
+          <stop offset="1" stopColor={stroke} stopOpacity="0" />
         </linearGradient>
       </defs>
       <polygon points={area} fill={`url(#${gid})`} />
       <polyline
         points={line}
         fill="none"
-        stroke={color}
+        stroke={stroke}
         strokeWidth="1.5"
         vectorEffect="non-scaling-stroke"
       />

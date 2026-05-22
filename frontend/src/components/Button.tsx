@@ -1,5 +1,5 @@
 import type { ButtonHTMLAttributes } from "react";
-import { t } from "../theme/atmos";
+import { useTheme } from "../theme/ThemeContext";
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   primary?: boolean;
@@ -10,6 +10,7 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 // V4 button — primary is the near-white pill, default is a subtle dark surface.
 export function Button({ primary, danger, ghost, size = "md", style, disabled, ...rest }: Props) {
+  const t = useTheme();
   const padding = size === "sm" ? "4px 10px" : size === "lg" ? "10px 16px" : "7px 14px";
   const fontSize = size === "sm" ? 12 : size === "lg" ? 14 : 13;
   const background = primary ? t.text2 : danger ? t.red : ghost ? "transparent" : t.cardHi;

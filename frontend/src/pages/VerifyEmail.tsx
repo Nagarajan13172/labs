@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { t } from "../theme/atmos";
+import { useTheme } from "../theme/ThemeContext";
 import { AuthShell } from "../components/AuthShell";
 import { Button } from "../components/Button";
 import { authApi } from "../api/auth";
@@ -9,6 +9,7 @@ import { ApiError } from "../api/client";
 type State = "verifying" | "ok" | "error";
 
 export function VerifyEmail() {
+  const t = useTheme();
   const [params] = useSearchParams();
   const token = params.get("token");
   const [state, setState] = useState<State>("verifying");

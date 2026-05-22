@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { t } from "../theme/atmos";
+import { useTheme, useThemeMode, type ThemeMode } from "../theme/ThemeContext";
 import { Page } from "../components/Page";
 import { Nav } from "../components/Nav";
 import { Card } from "../components/Card";
@@ -11,6 +11,7 @@ import { ApiError } from "../api/client";
 import type { UserRole } from "../api/types";
 
 function StatCard({ label, value, sub }: { label: string; value: number | string; sub?: string }) {
+  const t = useTheme();
   return (
     <div style={{ background: t.card, border: `1px solid ${t.rule}`, borderRadius: 10, padding: 16 }}>
       <div style={{ fontSize: 12, color: t.muted, fontWeight: 500 }}>{label}</div>
@@ -22,7 +23,62 @@ function StatCard({ label, value, sub }: { label: string; value: number | string
   );
 }
 
+const THEME_MODES: { value: ThemeMode; label: string }[] = [
+  { value: "light", label: "Light" },
+  { value: "dark", label: "Dark" },
+  { value: "system", label: "System" },
+];
+
+function AppearanceCard() {
+  const t = useTheme();
+  const { mode, resolved, setMode } = useThemeMode();
+  return (
+    <Card title="Appearance">
+      <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ fontSize: 13, color: t.muted }}>
+          Choose how the workspace looks. “System” follows your device setting (currently {resolved}).
+        </div>
+        <div
+          style={{
+            display: "inline-flex",
+            alignSelf: "flex-start",
+            background: t.bg2,
+            border: `1px solid ${t.rule2}`,
+            borderRadius: 8,
+            padding: 3,
+            gap: 3,
+          }}
+        >
+          {THEME_MODES.map((m) => {
+            const on = mode === m.value;
+            return (
+              <button
+                key={m.value}
+                onClick={() => setMode(m.value)}
+                aria-pressed={on}
+                style={{
+                  padding: "6px 16px",
+                  fontSize: 13,
+                  fontWeight: 500,
+                  borderRadius: 6,
+                  border: "none",
+                  cursor: "pointer",
+                  background: on ? t.cardHi : "transparent",
+                  color: on ? t.text2 : t.muted,
+                }}
+              >
+                {m.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 export function Settings() {
+  const t = useTheme();
   const { user } = useAuth();
   const isAdmin = user?.role === "admin" || user?.role === "superadmin";
   const isSuper = user?.role === "superadmin";
@@ -97,6 +153,8 @@ export function Settings() {
             ))}
           </div>
         </Card>
+
+        <AppearanceCard />
 
         {!isAdmin && (
           <Card title="Administration">

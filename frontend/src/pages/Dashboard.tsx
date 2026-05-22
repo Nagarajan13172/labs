@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
-import { t, gradient } from "../theme/atmos";
+import { gradient } from "../theme/atmos";
+import { useTheme } from "../theme/ThemeContext";
 import { Page } from "../components/Page";
 import { Nav } from "../components/Nav";
 import { Card } from "../components/Card";
@@ -40,6 +41,7 @@ function MetricCard({
   color: string;
   spark: number[];
 }) {
+  const t = useTheme();
   return (
     <div style={{ background: t.card, border: `1px solid ${t.rule}`, borderRadius: 10, padding: 16, overflow: "hidden" }}>
       <div style={{ fontSize: 12, color: t.muted, fontWeight: 500 }}>{label}</div>
@@ -61,6 +63,7 @@ function MetricCard({
 }
 
 export function Dashboard() {
+  const t = useTheme();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [lab, setLab] = useState<Lab | null>(null);

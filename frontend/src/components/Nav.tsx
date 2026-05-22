@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { t, gradient } from "../theme/atmos";
+import { gradient } from "../theme/atmos";
+import { useTheme } from "../theme/ThemeContext";
 import { Logo } from "./Logo";
 import { useAuth } from "../auth/AuthContext";
 import { CommandPalette } from "./CommandPalette";
+import { ThemeToggle } from "./ThemeToggle";
 
 const TABS: [string, string][] = [
   ["/", "Overview"],
@@ -18,6 +20,7 @@ export function Nav() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, signout } = useAuth();
+  const t = useTheme();
   const [paletteOpen, setPaletteOpen] = useState(false);
 
   // Global ⌘K / Ctrl+K to open the command palette.
@@ -88,6 +91,8 @@ export function Nav() {
             ⌘K
           </span>
         </button>
+
+        <ThemeToggle />
 
         <a
           href="http://localhost:8000/docs"

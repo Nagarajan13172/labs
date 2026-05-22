@@ -1,5 +1,5 @@
 import type { CSSProperties, ReactNode } from "react";
-import { t } from "../theme/atmos";
+import { useTheme } from "../theme/ThemeContext";
 
 // Rounded dark card with an optional title row + right-aligned action slot.
 export function Card({
@@ -17,6 +17,7 @@ export function Card({
   bodyStyle?: CSSProperties;
   padded?: boolean;
 }) {
+  const t = useTheme();
   return (
     <div
       style={{

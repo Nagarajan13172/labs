@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { t } from "../theme/atmos";
+import { useTheme } from "../theme/ThemeContext";
 import { Page } from "../components/Page";
 import { Nav } from "../components/Nav";
 import { Card } from "../components/Card";
@@ -17,14 +17,15 @@ const STATE_META: Record<MqttState, { tone: Tone; label: string }> = {
   error: { tone: "red", label: "Error" },
 };
 
-const lineTone = (m: JobMessage): string =>
-  m.is_error ? t.red : m.is_finished ? t.green : m.status ? t.blue : t.muted;
-
 export function Jobs() {
+  const t = useTheme();
   const { user } = useAuth();
   const { messages, state, clear } = useMqttJobs(user?.username);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const lineTone = (m: JobMessage): string =>
+    m.is_error ? t.red : m.is_finished ? t.green : m.status ? t.blue : t.muted;
 
   async function runSample() {
     setBusy(true);

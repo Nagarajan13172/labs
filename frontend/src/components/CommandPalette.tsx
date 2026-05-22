@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { t } from "../theme/atmos";
+import { useTheme } from "../theme/ThemeContext";
 import { useAuth } from "../auth/AuthContext";
 import { labsApi } from "../api/labs";
 import { networkApi } from "../api/network";
@@ -17,6 +17,7 @@ interface Item {
 
 // ⌘K command palette: jump to any page or live resource (lab, peers, databases).
 export function CommandPalette({ open, onClose }: { open: boolean; onClose: () => void }) {
+  const t = useTheme();
   const navigate = useNavigate();
   const { signout } = useAuth();
   const [query, setQuery] = useState("");

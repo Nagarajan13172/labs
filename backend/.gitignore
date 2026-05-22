@@ -29,3 +29,7 @@ uv.lock
 .idea/
 .vscode/
 .DS_Store
+
+
+#md file
+PROJECT_SUMMARY.md

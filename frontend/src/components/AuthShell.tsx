@@ -1,10 +1,12 @@
 import type { ReactNode } from "react";
 import { Link } from "react-router-dom";
-import { t } from "../theme/atmos";
+import { useTheme } from "../theme/ThemeContext";
 import { Logo } from "./Logo";
+import { ThemeToggle } from "./ThemeToggle";
 
 // Centered auth card on the ATMOS radial-gradient + masked grid backdrop.
 export function AuthShell({ children, footerRight }: { children: ReactNode; footerRight?: ReactNode }) {
+  const t = useTheme();
   return (
     <div
       style={{
@@ -39,9 +41,12 @@ export function AuthShell({ children, footerRight }: { children: ReactNode; foot
           <Logo size={22} />
           <span style={{ fontSize: 16, fontWeight: 500 }}>yslabs</span>
         </Link>
-        <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer" style={{ color: t.muted, fontSize: 13.5, textDecoration: "none" }}>
-          Docs
-        </a>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <a href="http://localhost:8000/docs" target="_blank" rel="noreferrer" style={{ color: t.muted, fontSize: 13.5, textDecoration: "none" }}>
+            Docs
+          </a>
+          <ThemeToggle />
+        </div>
       </div>
 
       <div style={{ position: "relative", flex: 1, display: "grid", placeItems: "center", padding: 32 }}>

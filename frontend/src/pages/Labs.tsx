@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { t, gradient } from "../theme/atmos";
+import { gradient } from "../theme/atmos";
+import { useTheme } from "../theme/ThemeContext";
 import { Page } from "../components/Page";
 import { Nav } from "../components/Nav";
 import { Card } from "../components/Card";
@@ -13,17 +14,17 @@ import type { Lab, LabCredentials } from "../api/types";
 const tone = (s: Lab["status"]): Tone =>
   s === "running" ? "green" : s === "failed" ? "red" : s === "stopped" ? "muted" : "amber";
 
-const codeBox: React.CSSProperties = {
-  padding: 10,
-  background: t.bg2,
-  borderRadius: 6,
-  border: `1px solid ${t.rule}`,
-  fontFamily: t.mono,
-  fontSize: 12,
-  wordBreak: "break-all",
-};
-
 export function Labs() {
+  const t = useTheme();
+  const codeBox: React.CSSProperties = {
+    padding: 10,
+    background: t.bg2,
+    borderRadius: 6,
+    border: `1px solid ${t.rule}`,
+    fontFamily: t.mono,
+    fontSize: 12,
+    wordBreak: "break-all",
+  };
   const { user } = useAuth();
   const [lab, setLab] = useState<Lab | null>(null);
   const [loading, setLoading] = useState(true);

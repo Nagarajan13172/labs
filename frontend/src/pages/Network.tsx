@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
-import { t } from "../theme/atmos";
+import { useTheme } from "../theme/ThemeContext";
 import { Page } from "../components/Page";
 import { Nav } from "../components/Nav";
 import { Card } from "../components/Card";
@@ -17,19 +17,19 @@ function fmtBytes(n: number): string {
   return `${(n / 1024 ** i).toFixed(1)} ${u[i]}`;
 }
 
-const input: React.CSSProperties = {
-  flex: 1,
-  background: t.bg2,
-  border: `1px solid ${t.rule2}`,
-  borderRadius: 6,
-  padding: "8px 12px",
-  fontSize: 13,
-  fontFamily: t.mono,
-  color: t.text,
-  outline: "none",
-};
-
 export function Network() {
+  const t = useTheme();
+  const input: React.CSSProperties = {
+    flex: 1,
+    background: t.bg2,
+    border: `1px solid ${t.rule2}`,
+    borderRadius: 6,
+    padding: "8px 12px",
+    fontSize: 13,
+    fontFamily: t.mono,
+    color: t.text,
+    outline: "none",
+  };
   const [peers, setPeers] = useState<PeerStatus[]>([]);
   const [selected, setSelected] = useState<PeerStatus | null>(null);
   const [config, setConfig] = useState<string | null>(null);

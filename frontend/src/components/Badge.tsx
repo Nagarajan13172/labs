@@ -1,18 +1,18 @@
 import type { ReactNode } from "react";
-import { t } from "../theme/atmos";
+import { useTheme } from "../theme/ThemeContext";
 
 export type Tone = "green" | "amber" | "red" | "blue" | "muted";
 
-const dot: Record<Tone, string> = {
-  green: t.green,
-  amber: t.amber,
-  red: t.red,
-  blue: t.blue,
-  muted: t.muted,
-};
-
 // Dot-status pill with a soft glow on the indicator.
 export function Badge({ children, tone = "green" }: { children: ReactNode; tone?: Tone }) {
+  const t = useTheme();
+  const dot: Record<Tone, string> = {
+    green: t.green,
+    amber: t.amber,
+    red: t.red,
+    blue: t.blue,
+    muted: t.muted,
+  };
   const c = dot[tone];
   return (
     <span
